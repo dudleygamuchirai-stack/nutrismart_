@@ -1,2 +1,3 @@
-## 2026-08-24
-Supabase project created. Region: EU-West. URL saved to team shared doc.
+## Vercel Deployment Setup
+- **Project Name:** nutrismart
+- **Frontend Vercel URL:** https://nutrismart.vercel.app
