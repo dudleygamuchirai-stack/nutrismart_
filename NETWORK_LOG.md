@@ -5,3 +5,5 @@
 ## Render Backend Setup
 - **Service Name:** nutrismart-api
 - **Backend Render URL:** https://nutrismart-api-tk05.onrender.com
+## Vercel Frontend Setup
+- **Frontend Vercel URL:** https://nutrismart-one.vercel.app
