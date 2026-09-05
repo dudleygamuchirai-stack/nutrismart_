@@ -1,0 +1,95 @@
+.week-view-container {
+  background: var(--color-card);
+  border-radius: 16px;
+  border: 1px solid var(--color-border);
+  box-shadow: 0 1px 4px rgba(13, 47, 94, 0.08);
+  overflow: hidden;
+}
+
+.week-view-header {
+  background: var(--color-navy);
+  padding: 18px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.week-view-header h3 {
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  color: var(--white);
+  font-weight: 700;
+}
+
+.week-view-header span {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.btn-sm {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: var(--white);
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.2s;
+}
+
+.btn-sm:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background: var(--color-border);
+}
+
+@media (max-width: 768px) {
+  .week-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.day-col {
+  background: var(--color-card);
+  padding: 12px 8px;
+  text-align: center;
+}
+
+.day-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-navy);
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+}
+
+.meal-chip {
+  border-radius: 6px;
+  padding: 6px 4px;
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.meal-chip.breakfast {
+  background: var(--color-green-light);
+  color: var(--color-navy);
+}
+
+.meal-chip.lunch {
+  background: var(--color-orange-light);
+  color: var(--color-orange);
+}
+
+.meal-chip.dinner {
+  background: #EEF2FF;
+  color: #3730A3;
+}
