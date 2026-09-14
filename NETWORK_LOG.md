@@ -11,3 +11,6 @@
 ## Supabase Database Setup
 - **Status:** Database tables created successfully via SQL Editor.
 - **Tables Provisioned:** users, ingredients, meals, meal_plans, meal_plan_days.
+
+## Seed Data Insertion
+- *Status:* Inserted 15 South African ingredients into public.ingredients table.
