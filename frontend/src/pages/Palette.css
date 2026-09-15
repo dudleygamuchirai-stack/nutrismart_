@@ -1,0 +1,198 @@
+.palette-container {
+  padding: 84px 32px 64px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.palette-header h2 {
+  font-family: 'Fraunces', serif;
+  font-size: 28px;
+  color: var(--color-navy);
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.palette-header p {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  margin-top: 4px;
+}
+
+.palette-section {
+  margin-top: 40px;
+}
+
+.palette-section h3 {
+  font-family: 'Fraunces', serif;
+  font-size: 20px;
+  color: var(--color-navy);
+  margin-bottom: 20px;
+  padding-bottom: 8px;
+  border-bottom: 1.5px solid var(--color-border);
+}
+
+/* ── COLOR SWATCHES ── */
+.swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.swatch-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(13, 47, 94, 0.05);
+}
+
+.swatch-color {
+  height: 80px;
+  width: 100%;
+}
+
+.swatch-details {
+  padding: 14px;
+}
+
+.swatch-name {
+  display: block;
+  font-family: monospace;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--color-navy);
+}
+
+.swatch-hex {
+  font-family: monospace;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.swatch-desc {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+/* ── TYPOGRAPHY SCALE ── */
+.type-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.type-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.type-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.type-meta {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-primary);
+}
+
+.sample-h1 {
+  font-family: 'Fraunces', serif;
+  font-size: 32px;
+  color: var(--color-navy);
+}
+
+.sample-h2 {
+  font-family: 'Fraunces', serif;
+  font-size: 22px;
+  color: var(--color-navy);
+}
+
+.sample-body {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  color: var(--color-text);
+  line-height: 1.6;
+}
+
+.sample-caption {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+}
+
+/* ── COMPONENTS PREVIEW ── */
+.components-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.preview-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.preview-card h4 {
+  font-size: 13px;
+  color: var(--color-navy);
+  margin-bottom: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.preview-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.btn-outline-dark {
+  background: transparent;
+  color: var(--color-navy);
+  border: 1.5px solid var(--color-navy);
+  padding: 12px 24px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.meal-chip-demo {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.meal-chip-demo.breakfast {
+  background: var(--color-green-light);
+  color: var(--color-navy);
+}
+
+.meal-chip-demo.lunch {
+  background: var(--color-orange-light);
+  color: var(--color-orange);
+}
+
+.meal-chip-demo.dinner {
+  background: #EEF2FF;
+  color: #3730A3;
+}
