@@ -7,9 +7,11 @@ import WeekView from '../components/WeekView';
 import BudgetMeter from '../components/BudgetMeter';
 import './Dashboard.css';
 
-export default function Dashboard({ setActivePage, planData, featuredRecipe, onSwapRecipe }) {
-  const remaining = (planData.budget - planData.spent).toFixed(2);
-  const isWithinBudget = planData.spent <= planData.budget;
+export default function Dashboard({ setActivePage, planData = {}, featuredRecipe, onSwapRecipe }) {
+  const budget = Number(planData.budget || 500);
+  const spent = Number(planData.totalCost ?? planData.spent ?? 418.50);
+  const remaining = (budget - spent).toFixed(2);
+  const isWithinBudget = spent <= budget;
 
   return (
     <div className="dashboard-container">
@@ -22,26 +24,26 @@ export default function Dashboard({ setActivePage, planData, featuredRecipe, onS
       <section className="kpi-grid">
         <div className="kpi-card">
           <span className="kpi-label">Weekly Budget</span>
-          <div className="kpi-value">R{planData.budget}</div>
+          <div className="kpi-value">R{budget}</div>
           <span className="kpi-sub">
             {isWithinBudget ? `↓ R${remaining} remaining` : `↑ R${Math.abs(remaining)} over`}
           </span>
         </div>
         <div className="kpi-card">
           <span className="kpi-label">Est. Spend</span>
-          <div className="kpi-value">R{planData.spent.toFixed(2)}</div>
+          <div className="kpi-value">R{spent.toFixed(2)}</div>
           <span className={`kpi-sub ${isWithinBudget ? 'highlight' : 'text-error'}`}>
             {isWithinBudget ? '✓ Within budget' : '⚠️ Exceeds budget'}
           </span>
         </div>
         <div className="kpi-card">
           <span className="kpi-label">Meals Planned</span>
-          <div className="kpi-value">{planData.mealsPlanned}</div>
+          <div className="kpi-value">{planData.mealsPlanned || 21}</div>
           <span className="kpi-sub highlight">7 days complete</span>
         </div>
         <div className="kpi-card">
           <span className="kpi-label">Avg. Calories/day</span>
-          <div className="kpi-value">{planData.calories.toLocaleString()}</div>
+          <div className="kpi-value">{(planData.calories || 1840).toLocaleString()}</div>
           <span className="kpi-sub highlight">↑ On target</span>
         </div>
       </section>
@@ -49,10 +51,10 @@ export default function Dashboard({ setActivePage, planData, featuredRecipe, onS
       {/* Dynamic Nutrition Summary */}
       <div style={{ marginBottom: '24px' }}>
         <NutritionSummary
-          calories={planData.calories}
-          protein={planData.protein}
-          carbs={planData.carbs}
-          fat={planData.fat}
+          calories={planData.calories || 1840}
+          protein={planData.protein || 115}
+          carbs={planData.carbs || 210}
+          fat={planData.fat || 54}
         />
       </div>
 
@@ -68,16 +70,19 @@ export default function Dashboard({ setActivePage, planData, featuredRecipe, onS
 
       {/* Main Grid */}
       <section className="dashboard-grid">
-        <WeekView onRegenerate={() => setActivePage('generate')} />
+        <WeekView 
+          schedule={planData.schedule} 
+          onRegenerate={() => setActivePage('generate')} 
+        />
 
         <div className="dash-sidebar">
           {/* Dynamic BudgetMeter */}
-          <BudgetMeter budget={planData.budget} spent={planData.spent} />
+          <BudgetMeter budget={budget} spent={spent} />
 
           {/* Dynamic Groceries */}
           <div className="quick-actions-card">
             <h4>Checkers Shopping List</h4>
-            {planData.groceries.map((grocery) => (
+            {planData.groceries && planData.groceries.map((grocery) => (
               <ShoppingListItem
                 key={grocery.id}
                 name={grocery.name}

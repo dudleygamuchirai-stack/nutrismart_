@@ -11,7 +11,9 @@ const DEFAULT_WEEK_SCHEDULE = [
   { day: 'SUN', breakfast: '🥞 Vetkoek', lunch: '🍲 Umngqusho', dinner: '🍗 Sunday Roast' }
 ];
 
-export default function WeekView({ schedule = DEFAULT_WEEK_SCHEDULE, onRegenerate }) {
+export default function WeekView({ schedule, onRegenerate }) {
+  const activeSchedule = schedule && schedule.length > 0 ? schedule : DEFAULT_WEEK_SCHEDULE;
+
   return (
     <div className="week-view-container">
       <div className="week-view-header">
@@ -27,14 +29,19 @@ export default function WeekView({ schedule = DEFAULT_WEEK_SCHEDULE, onRegenerat
       </div>
 
       <div className="week-grid">
-        {schedule.map((item) => (
-          <div key={item.day} className="day-col">
-            <div className="day-title">{item.day}</div>
-            <div className="meal-chip breakfast">{item.breakfast}</div>
-            <div className="meal-chip lunch">{item.lunch}</div>
-            <div className="meal-chip dinner">{item.dinner}</div>
-          </div>
-        ))}
+        {activeSchedule.map((item, index) => {
+          // Format full names like "Monday" to "MON" to maintain column layout
+          const displayDay = item.day ? item.day.slice(0, 3).toUpperCase() : `DAY ${index + 1}`;
+          
+          return (
+            <div key={item.day || index} className="day-col">
+              <div className="day-title">{displayDay}</div>
+              <div className="meal-chip breakfast">{item.breakfast}</div>
+              <div className="meal-chip lunch">{item.lunch}</div>
+              <div className="meal-chip dinner">{item.dinner}</div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

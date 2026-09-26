@@ -1,18 +1,21 @@
-import random
 import os
+import random
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
+CORS(app)
 
 # ==========================================
-# DATABASE CONNECTION (PostgreSQL / Supabase)
+# DATABASE CONNECTION (PostgreSQL / SQLite Fallback)
 # ==========================================
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
     'DATABASE_URL', 
-    'postgresql://postgres:NCK402PJB321@db.prwjyfepxirwgeqlhbsx.supabase.co:5432/postgres'
+    'sqlite:///nutrismart.db'
 )
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 # ==========================================
@@ -20,7 +23,7 @@ db = SQLAlchemy(app)
 # ==========================================
 
 class User(db.Model):
-    _tablename_ = 'User'
+    __tablename__ = 'User'
     UserID = db.Column(db.Integer, primary_key=True)
     FullName = db.Column(db.String(100), nullable=False)
     Email = db.Column(db.String(255), unique=True, nullable=False)
@@ -29,7 +32,7 @@ class User(db.Model):
     DietaryPreference = db.Column(db.String(100), default='None')
 
 class Product(db.Model):
-    _tablename_ = 'Product'
+    __tablename__ = 'Product'
     ProductID = db.Column(db.Integer, primary_key=True)
     ItemName = db.Column(db.String(255), nullable=False)
     Brand = db.Column(db.String(255))
@@ -39,7 +42,7 @@ class Product(db.Model):
     Price = db.Column(db.Numeric(10, 2), default=0.00)
 
 class Meal(db.Model):
-    _tablename_ = 'Meal'
+    __tablename__ = 'Meal'
     MealID = db.Column(db.Integer, primary_key=True)
     Name = db.Column(db.String(150), nullable=False)
     MealType = db.Column(db.String(20), nullable=False)  # 'breakfast', 'lunch', 'dinner'
@@ -47,7 +50,7 @@ class Meal(db.Model):
     EstimatedCost = db.Column(db.Numeric(8, 2), nullable=False)
 
 class MealPlan(db.Model):
-    _tablename_ = 'MealPlan'
+    __tablename__ = 'MealPlan'
     PlanID = db.Column(db.Integer, primary_key=True)
     UserID = db.Column(db.Integer, db.ForeignKey('User.UserID'), nullable=False)
     WeeklyBudget = db.Column(db.Numeric(8, 2), nullable=False)
@@ -61,7 +64,7 @@ class MealPlan(db.Model):
 def home():
     return jsonify({
         "status": "success",
-        "message": "Connected to NutriSmart SA PostgreSQL Database!"
+        "message": "Connected to NutriSmart SA Database!"
     })
 
 # ==========================================
@@ -207,17 +210,21 @@ def generate_7day_plan():
             "day_cost_zar": round(day_cost, 2)
         })
 
-    new_plan = MealPlan(
-        UserID=user_id,
-        WeeklyBudget=weekly_budget,
-        TotalCost=round(total_plan_cost, 2)
-    )
-    db.session.add(new_plan)
-    db.session.commit()
+    # If UserID is provided, persist it in the database
+    new_plan_id = None
+    if user_id:
+        new_plan = MealPlan(
+            UserID=user_id,
+            WeeklyBudget=weekly_budget,
+            TotalCost=round(total_plan_cost, 2)
+        )
+        db.session.add(new_plan)
+        db.session.commit()
+        new_plan_id = new_plan.PlanID
 
     return jsonify({
         "status": "success",
-        "plan_id": new_plan.PlanID,
+        "plan_id": new_plan_id,
         "user_id": user_id,
         "weekly_budget_zar": weekly_budget,
         "total_cost_zar": round(total_plan_cost, 2),
@@ -256,12 +263,12 @@ def get_user_plans(user_id):
     }), 200
 
 # ==========================================
-# FETCH DETAILED MEAL PLAN BY PLAN ID (EXPANDED)
+# FETCH DETAILED MEAL PLAN BY PLAN ID
 # ==========================================
 
 @app.route('/plans/<int:plan_id>', methods=['GET'])
 def get_plan_by_id(plan_id):
-    plan = db.session.get(MealPlan,plan_id)
+    plan = db.session.get(MealPlan, plan_id)
     
     if not plan:
         return jsonify({
@@ -269,16 +276,12 @@ def get_plan_by_id(plan_id):
             "message": f"Meal plan with PlanID {plan_id} not found"
         }), 404
 
-    schedule_details = getattr(plan, 'ScheduleData', None)
-
     return jsonify({
         "status": "success",
         "plan_id": plan.PlanID,
         "user_id": plan.UserID,
         "weekly_budget_zar": float(plan.WeeklyBudget),
-        "total_cost_zar": float(plan.TotalCost),
-        "schedule": schedule_details if schedule_details else "Schedule metadata saved successfully",
-        "created_at": plan.CreatedAt.isoformat() if hasattr(plan, 'CreatedAt') and plan.CreatedAt else None
+        "total_cost_zar": float(plan.TotalCost)
     }), 200
 
 if __name__ == '__main__':
@@ -298,6 +301,6 @@ if __name__ == '__main__':
             ]
             db.session.bulk_save_objects(sample_meals)
             db.session.commit()
-            print("Successfully seeded initial meals into PostgreSQL!")
+            print("Successfully seeded initial meals into SQLite database!")
             
     app.run(debug=True, port=5000)

@@ -23,7 +23,7 @@ export default function MealCard({ meal, onSwap }) {
 
       <button className="meal-swap-btn" onClick={() => onSwap && onSwap(meal)}>
         🔄 Swap Meal
-      </button>
+      </button>  
     </div>
   );
 }

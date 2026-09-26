@@ -1,89 +1,70 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import Navbar from './components/Navbar';
 import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import Generate from './pages/Generate';
 import Palette from './pages/Palette';
+import './App.css';
 
-const SAMPLE_RECIPES = [
-  {
-    type: 'Dinner',
-    name: 'Grilled Chicken & Steamed Veggies',
-    prepTime: '25 mins',
-    tag: 'High-Protein',
-    cost: 32.50
-  },
-  {
-    type: 'Dinner',
-    name: 'Cape Malay Lentil Bobotie',
-    prepTime: '35 mins',
-    tag: 'Vegetarian',
-    cost: 19.50
-  },
-  {
-    type: 'Dinner',
-    name: 'Pilchard & Tomato Stew with Pap',
-    prepTime: '20 mins',
-    tag: 'Budget Saver',
-    cost: 16.80
-  },
-  {
-    type: 'Dinner',
-    name: 'Beef Stew & Dumplings (Dombolo)',
-    prepTime: '50 mins',
-    tag: 'Hearty',
-    cost: 36.00
-  }
+const INITIAL_PLAN = {
+  budget: 500,
+  spent: 418.50,
+  totalCost: 418.50,
+  mealsPlanned: 21,
+  calories: 1840,
+  protein: 115,
+  carbs: 210,
+  fat: 54,
+  schedule: [],
+  groceries: [
+    { id: 1, name: 'Jungle Oats', quantity: '1 kg box', price: 38.99, checked: true },
+    { id: 2, name: 'Full Cream Milk', quantity: '2 litres', price: 34.00, checked: false },
+    { id: 3, name: 'Chicken Breast Fillets', quantity: '1 kg pack', price: 89.99, checked: false },
+    { id: 4, name: 'Brown Rice', quantity: '2 kg bag', price: 36.50, checked: false }
+  ]
+};
+
+const FEATURED_RECIPES = [
+  { id: 1, name: 'Grilled Chicken & Steamed Veggies', type: 'DINNER', price: 'R32.50', time: '25 mins', tag: 'High-Protein' },
+  { id: 2, name: 'Pap & Chakalaka with Beans', type: 'DINNER', price: 'R28.00', time: '20 mins', tag: 'Vegetarian' },
+  { id: 3, name: 'Lentil Stew with Brown Rice', type: 'DINNER', price: 'R22.50', time: '35 mins', tag: 'Budget Saver' }
 ];
 
-function App() {
-  const [activePage, setActivePage] = useState('landing');
-  const [recipeIndex, setRecipeIndex] = useState(0);
+export default function App() {
+  const [activePage, setActivePage] = useState('dashboard');
+  const [planData, setPlanData] = useState(INITIAL_PLAN);
+  const [featuredRecipe, setFeaturedRecipe] = useState(FEATURED_RECIPES[0]);
 
-  const [planData, setPlanData] = useState({
-    budget: 500,
-    spent: 418.50,
-    mealsPlanned: 21,
-    calories: 1840,
-    protein: 115,
-    carbs: 210,
-    fat: 54,
-    groceries: [
-      { id: 1, name: 'Jungle Oats', quantity: '1', unit: 'kg box', price: 38.99, checked: true },
-      { id: 2, name: 'Full Cream Milk', quantity: '2', unit: 'litres', price: 34.00, checked: false },
-      { id: 3, name: 'Chicken Breast Fillets', quantity: '1', unit: 'kg pack', price: 89.99, checked: false },
-      { id: 4, name: 'Brown Rice', quantity: '2', unit: 'kg bag', price: 36.50, checked: false }
-    ]
-  });
-
-  const handleSwapRecipe = () => {
-    setRecipeIndex((prevIndex) => (prevIndex + 1) % SAMPLE_RECIPES.length);
-  };
-
-  const handleGeneratePlan = ({ budget, people, selectedTags }) => {
-    const calculatedSpent = Math.round(budget * 0.837 * 100) / 100;
-    const isHighProtein = selectedTags.includes('High-Protein');
-
+  // Saves the live backend schedule and total cost into React state
+  const handleGeneratePlan = (newPlan) => {
     setPlanData((prev) => ({
       ...prev,
-      budget: Number(budget),
-      spent: calculatedSpent,
-      calories: isHighProtein ? 2050 : 1840,
-      protein: isHighProtein ? 140 : 115
+      budget: Number(newPlan.budget) || prev.budget,
+      spent: Number(newPlan.totalCost ?? newPlan.spent ?? prev.spent),
+      totalCost: Number(newPlan.totalCost ?? newPlan.spent ?? prev.spent),
+      schedule: newPlan.schedule && newPlan.schedule.length > 0 ? newPlan.schedule : prev.schedule,
+      planId: newPlan.planId || prev.planId,
     }));
   };
 
-  return (
-    <div>
-      <Navbar activePage={activePage} setActivePage={setActivePage} />
+  const handleSwapRecipe = () => {
+    setFeaturedRecipe((prev) => {
+      const currentIndex = FEATURED_RECIPES.findIndex((r) => r.name === prev.name);
+      const nextIndex = (currentIndex + 1) % FEATURED_RECIPES.length;
+      return FEATURED_RECIPES[nextIndex];
+    });
+  };
 
-      <main>
+  return (
+    <div className="app-layout">
+      <Navbar activePage={activePage} setActivePage={setActivePage} />
+      <main className="app-main-content">
         {activePage === 'landing' && <Landing setActivePage={setActivePage} />}
         {activePage === 'dashboard' && (
           <Dashboard
             setActivePage={setActivePage}
             planData={planData}
-            featuredRecipe={SAMPLE_RECIPES[recipeIndex]}
+            featuredRecipe={featuredRecipe}
             onSwapRecipe={handleSwapRecipe}
           />
         )}
@@ -94,10 +75,8 @@ function App() {
             currentBudget={planData.budget}
           />
         )}
-        {activePage === 'palette' && <Palette />}
+        {activePage === 'palette' && <Palette setActivePage={setActivePage} />}
       </main>
     </div>
   );
 }
-
-export default App;

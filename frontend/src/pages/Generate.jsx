@@ -5,8 +5,9 @@ import './Generate.css';
 export default function Generate({ setActivePage, onGeneratePlan, currentBudget = 500 }) {
   const [budget, setBudget] = useState(currentBudget);
   const [people, setPeople] = useState(2);
-  const [selectedTags, setSelectedTags] = useState(['High-Protein']);
+  const [selectedTags, setSelectedTags] = useState(['🌿 Vegetarian']);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
 
   const dietaryOptions = [
     { id: 'vegetarian', label: '🌿 Vegetarian' },
@@ -25,15 +26,59 @@ export default function Generate({ setActivePage, onGeneratePlan, currentBudget 
     }
   };
 
-  const handleGenerate = (e) => {
+  const handleGenerate = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMessage(null);
 
-    setTimeout(() => {
-      onGeneratePlan({ budget, people, selectedTags });
-      setLoading(false);
+    // Map UI tag selection to database tags ('vegetarian', 'halal', or 'None')
+    let dietaryPref = 'None';
+    const tagString = selectedTags.join(' ').toLowerCase();
+    if (tagString.includes('vegetarian')) {
+      dietaryPref = 'vegetarian';
+    } else if (tagString.includes('halal')) {
+      dietaryPref = 'halal';
+    }
+
+    try {
+      const response = await fetch('http://127.0.0.1:5000/plans/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          WeeklyBudget: budget,
+          DietaryPreference: dietaryPref,
+          UserID: 1,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || result.status === 'error') {
+        throw new Error(result.message || 'Failed to generate meal plan from server.');
+      }
+
+      // Pass the server-generated 7-day schedule to the App/Dashboard state
+      if (onGeneratePlan) {
+        onGeneratePlan({
+          budget,
+          people,
+          selectedTags,
+          schedule: result.schedule,
+          totalCost: result.total_cost_zar,
+          planId: result.plan_id,
+        });
+      }
+
+      // Navigate directly to Dashboard to display the results
       setActivePage('dashboard');
-    }, 1200);
+    } catch (err) {
+      console.error('Plan generation failed:', err);
+      setErrorMessage(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -103,6 +148,12 @@ export default function Generate({ setActivePage, onGeneratePlan, currentBudget 
               })}
             </div>
           </div>
+
+          {errorMessage && (
+            <div style={{ color: '#d63031', fontSize: '0.875rem', marginBottom: '1rem', textAlign: 'center' }}>
+              ⚠️ {errorMessage}
+            </div>
+          )}
 
           <button type="submit" className="generate-submit-btn" disabled={loading}>
             {loading ? '⏳ Optimizing ingredients…' : '✨ Generate My 7-Day Plan'}
