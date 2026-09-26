@@ -1,3 +1,4 @@
+// Dashboard view: aggregates weekly meal schedules, macro nutrition tracking, and grocery budget metrics
 import React from 'react';
 import MealCard from '../components/MealCard';
 import ShoppingListItem from '../components/ShoppingListItem';

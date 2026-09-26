@@ -1,3 +1,4 @@
+// MealCard component: presents individual meal details, nutritional breakdown, and triggers recipe swap actions
 import React from 'react';
 import './MealCard.css';
 

@@ -1,3 +1,4 @@
+// Landing page: renders the hero section, core feature highlights, and app navigation entry point
 import React from 'react';
 import './Landing.css';
 

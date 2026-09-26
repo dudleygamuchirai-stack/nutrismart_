@@ -1,3 +1,4 @@
+// Generate view: handles dietary preference forms, calorie targets, and dynamic meal plan generation logic
 import React, { useState } from 'react';
 import './Generate.css';
 
