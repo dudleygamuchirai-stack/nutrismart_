@@ -1,0 +1,45 @@
+/* ── OFFICIAL TOKENS (PAGE 34) ── */
+:root {
+  --color-primary:       #1D9E75;
+  --color-navy:          #0D2F5E;
+  --color-bg:            #FDFAF5;
+  --color-warm:          #F5EFE0;
+  --color-green-light:   #E8F7F2;
+  --color-green-mid:     #5EC8A0;
+  --color-card:          #FFFFFF;
+  --color-orange:        #E8793A;
+  --color-orange-light:  #FEF0E8;
+  --color-text:          #1A1A1A;
+  --color-text-muted:    #6B7280;
+  --color-border:        #E5E7EB;
+  --color-error:         #D63031;
+
+  /* Helper aliases */
+  --navy:       var(--color-navy);
+  --green:      var(--color-primary);
+  --green-lt:   var(--color-green-light);
+  --green-mid:  var(--color-green-mid);
+  --cream:      var(--color-bg);
+  --orange:     var(--color-orange);
+  --orange-lt:  var(--color-orange-light);
+  --border:     var(--color-border);
+  --white:      var(--color-card);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: 'Fraunces', serif;
+}

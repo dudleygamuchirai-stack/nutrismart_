@@ -1,0 +1,175 @@
+.generate-container {
+  padding: 96px 20px 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 60px);
+}
+
+.generate-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  padding: 40px;
+  max-width: 580px;
+  width: 100%;
+  box-shadow: 0 4px 24px rgba(13, 47, 94, 0.08);
+}
+
+.generate-header {
+  margin-bottom: 28px;
+}
+
+.generate-header h2 {
+  font-family: 'Fraunces', serif;
+  font-size: 28px;
+  color: var(--color-navy);
+  margin-top: 6px;
+  font-weight: 700;
+}
+
+.generate-header p {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+
+.generate-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-navy);
+}
+
+.input-affix-wrapper {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid var(--color-border);
+  border-radius: 10px;
+  padding: 0 14px;
+  background: var(--color-card);
+}
+
+.input-affix-wrapper:focus-within {
+  border-color: var(--color-primary);
+}
+
+.input-prefix {
+  font-weight: 700;
+  color: var(--color-navy);
+  font-size: 16px;
+  margin-right: 8px;
+}
+
+.input-affix-wrapper input {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  font-family: 'DM Sans', sans-serif;
+  padding: 12px 0;
+  color: var(--color-text);
+}
+
+.form-hint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.stepper-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1.5px solid var(--color-border);
+  border-radius: 10px;
+  padding: 6px;
+  max-width: 220px;
+  background: var(--color-bg);
+}
+
+.stepper-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: none;
+  background: var(--color-card);
+  color: var(--color-navy);
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.stepper-value {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--color-navy);
+}
+
+/* ── DietaryTagPicker ── */
+.dietary-tag-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.diet-tag-btn {
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.diet-tag-btn:hover {
+  border-color: var(--color-primary);
+}
+
+.diet-tag-btn.active {
+  background: var(--color-green-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.generate-submit-btn {
+  background: var(--color-primary);
+  color: var(--white);
+  border: none;
+  padding: 14px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 16px rgba(29, 158, 117, 0.3);
+  margin-top: 10px;
+}
+
+.generate-submit-btn:hover {
+  background: #178260;
+  transform: translateY(-1px);
+}
+
+.generate-submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
