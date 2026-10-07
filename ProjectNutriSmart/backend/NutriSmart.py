@@ -1,260 +1,396 @@
 import os
+import uuid
 import random
+from datetime import date, timedelta
+
 from flask import Flask, jsonify, request
-from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
-from werkzeug.security import check_password_hash, generate_password_hash
+from sqlalchemy import func, Text
+from sqlalchemy.dialects.postgresql import UUID, ARRAY
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-CORS(app)
 
 # ==========================================
-# DATABASE CONNECTION (PostgreSQL / SQLite Fallback)
+# DATABASE CONNECTION (Supabase PostgreSQL)
+# The connection string lives in Render > Environment > DATABASE_URL
 # ==========================================
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
-    'DATABASE_URL', 
-    'sqlite:///nutrismart.db'
-)
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db_url = os.environ.get('DATABASE_URL')
+if not db_url:
+    raise RuntimeError("DATABASE_URL is not set. Add it in Render > Environment.")
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {"pool_pre_ping": True}
 db = SQLAlchemy(app)
 
 # ==========================================
 # DATABASE MODELS
+# Every name below matches the tables you created in Supabase (Task 5).
+# We do NOT call db.create_all(): the tables already exist.
 # ==========================================
 
 class User(db.Model):
-    __tablename__ = 'User'
-    UserID = db.Column(db.Integer, primary_key=True)
-    FullName = db.Column(db.String(100), nullable=False)
-    Email = db.Column(db.String(255), unique=True, nullable=False)
-    PasswordHash = db.Column(db.String(255), nullable=False)
-    WeeklyBudget = db.Column(db.Numeric(9, 2), default=500.00)
-    DietaryPreference = db.Column(db.String(100), default='None')
+    __tablename__ = 'users'
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    full_name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(255), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255))          # added by FIX 1 in Supabase
+    default_budget = db.Column(db.Numeric(8, 2), default=500)
+    household_size = db.Column(db.Integer, default=1)
+    dietary_prefs = db.Column(ARRAY(Text), default=list)
+    email_notify = db.Column(db.Boolean, default=False)
 
-class Product(db.Model):
-    __tablename__ = 'Product'
-    ProductID = db.Column(db.Integer, primary_key=True)
-    ItemName = db.Column(db.String(255), nullable=False)
-    Brand = db.Column(db.String(255))
-    Weight_Volume = db.Column(db.String(100))
-    Category = db.Column(db.String(100))
-    NutritionalValuePer100g = db.Column(db.String(255))
-    Price = db.Column(db.Numeric(10, 2), default=0.00)
+
+class Ingredient(db.Model):
+    __tablename__ = 'ingredients'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), unique=True, nullable=False)
+    category = db.Column(db.String(50), nullable=False)
+    unit = db.Column(db.String(30), nullable=False)
+    price_zar = db.Column(db.Numeric(8, 2), nullable=False)
+    retailer = db.Column(db.String(80))
+    calories_per_unit = db.Column(db.Numeric(8, 2))
+    protein_g = db.Column(db.Numeric(8, 2))
+    carbs_g = db.Column(db.Numeric(8, 2))
+    fat_g = db.Column(db.Numeric(8, 2))
+    is_active = db.Column(db.Boolean, default=True)
+
 
 class Meal(db.Model):
-    __tablename__ = 'Meal'
-    MealID = db.Column(db.Integer, primary_key=True)
-    Name = db.Column(db.String(150), nullable=False)
-    MealType = db.Column(db.String(20), nullable=False)  # 'breakfast', 'lunch', 'dinner'
-    DietaryTag = db.Column(db.String(50), default='None')
-    EstimatedCost = db.Column(db.Numeric(8, 2), nullable=False)
+    __tablename__ = 'meals'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), unique=True, nullable=False)
+    meal_type = db.Column(db.String(20), nullable=False)   # breakfast / lunch / dinner
+    dietary_tags = db.Column(ARRAY(Text), default=list)
+    prep_minutes = db.Column(db.Integer, default=30)
+    instructions = db.Column(db.Text)
+    image_url = db.Column(db.Text)
+    is_active = db.Column(db.Boolean, default=True)
+
+
+class MealIngredient(db.Model):
+    __tablename__ = 'meal_ingredients'
+    id = db.Column(db.Integer, primary_key=True)
+    meal_id = db.Column(db.Integer, db.ForeignKey('meals.id'), nullable=False)
+    ingredient_id = db.Column(db.Integer, db.ForeignKey('ingredients.id'))
+    quantity = db.Column(db.Numeric(8, 2), nullable=False)
+
 
 class MealPlan(db.Model):
-    __tablename__ = 'MealPlan'
-    PlanID = db.Column(db.Integer, primary_key=True)
-    UserID = db.Column(db.Integer, db.ForeignKey('User.UserID'), nullable=False)
-    WeeklyBudget = db.Column(db.Numeric(8, 2), nullable=False)
-    TotalCost = db.Column(db.Numeric(8, 2), nullable=False)
+    __tablename__ = 'meal_plans'
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'))
+    week_start = db.Column(db.Date, nullable=False)
+    budget_zar = db.Column(db.Numeric(8, 2), nullable=False)
+    household_size = db.Column(db.Integer, nullable=False)
+    total_cost = db.Column(db.Numeric(8, 2))
+    is_saved = db.Column(db.Boolean, default=False)
+    plan_name = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, server_default=func.now())
+
+
+class MealPlanDay(db.Model):
+    __tablename__ = 'meal_plan_days'
+    id = db.Column(db.Integer, primary_key=True)
+    plan_id = db.Column(UUID(as_uuid=True), db.ForeignKey('meal_plans.id'))
+    day_number = db.Column(db.Integer, nullable=False)     # 1 = Monday ... 7 = Sunday
+    breakfast_id = db.Column(db.Integer, db.ForeignKey('meals.id'))
+    lunch_id = db.Column(db.Integer, db.ForeignKey('meals.id'))
+    dinner_id = db.Column(db.Integer, db.ForeignKey('meals.id'))
+    day_cost = db.Column(db.Numeric(8, 2))
+
+
+# ==========================================
+# HELPERS
+# ==========================================
+DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
+
+def parse_uuid(value):
+    try:
+        return uuid.UUID(str(value))
+    except (ValueError, TypeError, AttributeError):
+        return None
+
+
+def prefs_to_list(value):
+    """Turn 'vegetarian' or 'halal, vegetarian' or ['halal'] into a clean list. 'None' -> []."""
+    if value is None:
+        return []
+    if isinstance(value, str):
+        value = value.split(',')
+    cleaned = []
+    for item in value:
+        item = str(item).strip().lower()
+        if item and item != 'none':
+            cleaned.append(item)
+    return cleaned
+
+
+def get_meal_costs():
+    """Cost of each meal = sum of (quantity x ingredient price). Returns {meal_id: cost}."""
+    rows = (
+        db.session.query(
+            MealIngredient.meal_id,
+            func.sum(MealIngredient.quantity * Ingredient.price_zar)
+        )
+        .join(Ingredient, Ingredient.id == MealIngredient.ingredient_id)
+        .group_by(MealIngredient.meal_id)
+        .all()
+    )
+    return {meal_id: float(total or 0) for meal_id, total in rows}
+
 
 # ==========================================
 # ROUTES
 # ==========================================
-
 @app.route('/', methods=['GET'])
 def home():
     return jsonify({
         "status": "success",
-        "message": "Connected to NutriSmart SA Database!"
+        "message": "Connected to NutriSmart SA PostgreSQL Database!"
     })
 
-# ==========================================
-# AUTHENTICATION ROUTES
-# ==========================================
 
+# ---------- AUTHENTICATION ----------
 @app.route('/register', methods=['POST'])
 def register():
-    data = request.get_json()
-    
-    if not data or not data.get('Email') or not data.get('Password') or not data.get('FullName'):
+    data = request.get_json(silent=True) or {}
+
+    if not data.get('Email') or not data.get('Password') or not data.get('FullName'):
         return jsonify({"status": "error", "message": "Missing required fields"}), 400
-        
-    if User.query.filter_by(Email=data['Email']).first():
+
+    if User.query.filter_by(email=data['Email']).first():
         return jsonify({"status": "error", "message": "Email already registered"}), 400
-        
-    hashed_password = generate_password_hash(data['Password'], method='scrypt')
-    new_user = User(
-        FullName=data['FullName'],
-        Email=data['Email'],
-        PasswordHash=hashed_password,
-        WeeklyBudget=data.get('WeeklyBudget', 0.00),
-        DietaryPreference=data.get('DietaryPreference', 'None')
-    )
-    
-    db.session.add(new_user)
-    db.session.commit()
-    
-    return jsonify({"status": "success", "message": "User registered successfully"}), 201
+
+    try:
+        new_user = User(
+            full_name=data['FullName'],
+            email=data['Email'],
+            password_hash=generate_password_hash(data['Password'], method='scrypt'),
+            default_budget=data.get('WeeklyBudget', 500),
+            household_size=int(data.get('HouseholdSize', 1)),
+            dietary_prefs=prefs_to_list(data.get('DietaryPreference')),
+        )
+        db.session.add(new_user)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": f"Could not register user: {e.__class__.__name__}"}), 500
+
+    return jsonify({
+        "status": "success",
+        "message": "User registered successfully",
+        "UserID": str(new_user.id)
+    }), 201
 
 
 @app.route('/login', methods=['POST'])
 def login():
-    data = request.get_json()
-    
-    if not data or not data.get('Email') or not data.get('Password'):
+    data = request.get_json(silent=True) or {}
+
+    if not data.get('Email') or not data.get('Password'):
         return jsonify({"status": "error", "message": "Email and password required"}), 400
-        
-    user = User.query.filter_by(Email=data['Email']).first()
-    
-    if not user or not check_password_hash(user.PasswordHash, data['Password']):
+
+    user = User.query.filter_by(email=data['Email']).first()
+
+    if not user or not user.password_hash or not check_password_hash(user.password_hash, data['Password']):
         return jsonify({"status": "error", "message": "Invalid email or password"}), 401
-        
+
+    prefs = user.dietary_prefs or []
     return jsonify({
         "status": "success",
         "message": "Login successful",
         "user": {
-            "UserID": user.UserID,
-            "FullName": user.FullName,
-            "Email": user.Email,
-            "WeeklyBudget": float(user.WeeklyBudget) if user.WeeklyBudget else 0.00,
-            "DietaryPreference": user.DietaryPreference
+            "UserID": str(user.id),
+            "FullName": user.full_name,
+            "Email": user.email,
+            "WeeklyBudget": float(user.default_budget) if user.default_budget else 0.00,
+            "HouseholdSize": user.household_size or 1,
+            "DietaryPreference": ", ".join(prefs) if prefs else "None"
         }
     }), 200
 
-# ==========================================
-# PRODUCT ENDPOINTS
-# ==========================================
 
+# ---------- PRODUCTS (these are your 'ingredients' table) ----------
 @app.route('/products', methods=['GET'])
 def get_products():
-    products = Product.query.all()
+    items = Ingredient.query.filter_by(is_active=True).order_by(Ingredient.id).all()
     product_list = []
-    for p in products:
+    for i in items:
         product_list.append({
-            "ProductID": p.ProductID,
-            "ItemName": p.ItemName,
-            "Brand": p.Brand,
-            "Weight_Volume": p.Weight_Volume,
-            "Category": p.Category,
-            "NutritionalValuePer100g": p.NutritionalValuePer100g
+            "ProductID": i.id,
+            "ItemName": i.name,
+            "Brand": i.retailer,
+            "Weight_Volume": i.unit,
+            "Category": i.category,
+            "Price": float(i.price_zar) if i.price_zar is not None else 0.0,
+            "Calories": float(i.calories_per_unit) if i.calories_per_unit is not None else None,
+            "Protein_g": float(i.protein_g) if i.protein_g is not None else None,
+            "Carbs_g": float(i.carbs_g) if i.carbs_g is not None else None,
+            "Fat_g": float(i.fat_g) if i.fat_g is not None else None,
         })
     return jsonify({"status": "success", "products": product_list}), 200
 
+
 @app.route('/products', methods=['POST'])
 def add_product():
-    data = request.get_json()
-    if not data or not data.get('ItemName'):
-        return jsonify({"status": "error", "message": "ItemName is required"}), 400
-        
-    new_product = Product(
-        ItemName=data['ItemName'],
-        Brand=data.get('Brand', ''),
-        Weight_Volume=data.get('Weight_Volume', ''),
-        Category=data.get('Category', ''),
-        NutritionalValuePer100g=data.get('NutritionalValuePer100g', '')
-    )
-    db.session.add(new_product)
-    db.session.commit()
+    data = request.get_json(silent=True) or {}
+    required = ['ItemName', 'Category', 'Weight_Volume', 'Price']
+    if any(not data.get(k) for k in required):
+        return jsonify({"status": "error",
+                        "message": "ItemName, Category, Weight_Volume and Price are required"}), 400
+    try:
+        db.session.add(Ingredient(
+            name=data['ItemName'],
+            category=data['Category'],
+            unit=data['Weight_Volume'],
+            price_zar=data['Price'],
+            retailer=data.get('Brand', ''),
+        ))
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": f"Could not add product: {e.__class__.__name__}"}), 500
     return jsonify({"status": "success", "message": "Product added successfully"}), 201
 
-# ==========================================
-# 7-DAY MEAL PLAN GENERATION ENDPOINT
-# ==========================================
 
+# ---------- 7-DAY MEAL PLAN GENERATION ----------
 @app.route('/plans/generate', methods=['POST'])
 def generate_7day_plan():
-    data = request.get_json()
-    
-    weekly_budget = float(data.get('WeeklyBudget', 0))
-    user_id = data.get('UserID')
-    dietary_pref = data.get('DietaryPreference', 'None')
-    
+    data = request.get_json(silent=True) or {}
+
+    user_id = parse_uuid(data.get('UserID'))
+    if not user_id:
+        return jsonify({"status": "error", "message": "A valid UserID (UUID) is required"}), 400
+
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({"status": "error", "message": "User not found"}), 404
+
+    try:
+        weekly_budget = float(data.get('WeeklyBudget', user.default_budget or 0))
+        household = int(data.get('HouseholdSize', user.household_size or 1))
+    except (ValueError, TypeError):
+        return jsonify({"status": "error", "message": "WeeklyBudget and HouseholdSize must be numbers"}), 400
+
     if weekly_budget <= 0:
         return jsonify({"status": "error", "message": "Valid WeeklyBudget is required"}), 400
+    household = max(household, 1)
 
-    query = Meal.query
-    if dietary_pref and dietary_pref.lower() != 'none':
-        query = query.filter(
-            (Meal.DietaryTag.ilike(f"%{dietary_pref}%")) | 
-            (Meal.DietaryTag.ilike("%none%"))
-        )
-    
+    if 'DietaryPreference' in data:
+        prefs = prefs_to_list(data.get('DietaryPreference'))
+    else:
+        prefs = prefs_to_list(user.dietary_prefs)
+
+    query = Meal.query.filter_by(is_active=True)
+    if prefs:
+        query = query.filter(Meal.dietary_tags.contains(prefs))   # meal must carry ALL chosen tags
     all_meals = query.all()
-    
-    breakfast_pool = [m for m in all_meals if m.MealType.lower() == 'breakfast']
-    lunch_pool = [m for m in all_meals if m.MealType.lower() == 'lunch']
-    dinner_pool = [m for m in all_meals if m.MealType.lower() == 'dinner']
+
+    costs = get_meal_costs()
+    all_meals = [m for m in all_meals if costs.get(m.id, 0) > 0]   # ignore meals with no ingredients
+
+    breakfast_pool = [m for m in all_meals if m.meal_type.lower() == 'breakfast']
+    lunch_pool = [m for m in all_meals if m.meal_type.lower() == 'lunch']
+    dinner_pool = [m for m in all_meals if m.meal_type.lower() == 'dinner']
 
     if not breakfast_pool or not lunch_pool or not dinner_pool:
         return jsonify({
-            "status": "error", 
-            "message": "Not enough meals available for the selected dietary preferences."
+            "status": "error",
+            "message": "Not enough meals (with ingredients) for the selected dietary preferences."
         }), 422
 
-    days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-    weekly_schedule = []
-    total_plan_cost = 0.0
+    # Try up to 100 random weeks; keep the first one inside the budget, else the cheapest.
+    best_days, best_total = None, None
+    for _ in range(100):
+        picks, total = [], 0.0
+        for _day in range(7):
+            b, l, d = random.choice(breakfast_pool), random.choice(lunch_pool), random.choice(dinner_pool)
+            day_cost = (costs[b.id] + costs[l.id] + costs[d.id]) * household
+            total += day_cost
+            picks.append((b, l, d, day_cost))
+        if best_total is None or total < best_total:
+            best_days, best_total = picks, total
+        if total <= weekly_budget:
+            best_days, best_total = picks, total
+            break
 
-    for day in days:
-        b_meal = random.choice(breakfast_pool)
-        l_meal = random.choice(lunch_pool)
-        d_meal = random.choice(dinner_pool)
-        
-        day_cost = float(b_meal.EstimatedCost) + float(l_meal.EstimatedCost) + float(d_meal.EstimatedCost)
-        total_plan_cost += day_cost
+    # Week start = the Monday of this week (or the date the caller sends)
+    try:
+        week_start = date.fromisoformat(data['WeekStart']) if data.get('WeekStart') else None
+    except ValueError:
+        return jsonify({"status": "error", "message": "WeekStart must look like 2026-10-12"}), 400
+    if week_start is None:
+        today = date.today()
+        week_start = today - timedelta(days=today.weekday())
 
-        weekly_schedule.append({
-            "day": day,
-            "breakfast": b_meal.Name,
-            "lunch": l_meal.Name,
-            "dinner": d_meal.Name,
-            "day_cost_zar": round(day_cost, 2)
-        })
-
-    # If UserID is provided, persist it in the database
-    new_plan_id = None
-    if user_id:
-        new_plan = MealPlan(
-            UserID=user_id,
-            WeeklyBudget=weekly_budget,
-            TotalCost=round(total_plan_cost, 2)
+    try:
+        plan = MealPlan(
+            user_id=user_id,
+            week_start=week_start,
+            budget_zar=weekly_budget,
+            household_size=household,
+            total_cost=round(best_total, 2),
+            plan_name=data.get('PlanName'),
         )
-        db.session.add(new_plan)
+        db.session.add(plan)
+        db.session.flush()   # gives the plan its id
+
+        schedule = []
+        for index, (b, l, d, day_cost) in enumerate(best_days):
+            db.session.add(MealPlanDay(
+                plan_id=plan.id,
+                day_number=index + 1,
+                breakfast_id=b.id,
+                lunch_id=l.id,
+                dinner_id=d.id,
+                day_cost=round(day_cost, 2),
+            ))
+            schedule.append({
+                "day": DAY_NAMES[index],
+                "breakfast": b.name,
+                "lunch": l.name,
+                "dinner": d.name,
+                "day_cost_zar": round(day_cost, 2),
+            })
         db.session.commit()
-        new_plan_id = new_plan.PlanID
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": f"Could not save plan: {e.__class__.__name__}"}), 500
 
     return jsonify({
         "status": "success",
-        "plan_id": new_plan_id,
-        "user_id": user_id,
+        "plan_id": str(plan.id),
+        "user_id": str(user_id),
         "weekly_budget_zar": weekly_budget,
-        "total_cost_zar": round(total_plan_cost, 2),
-        "within_budget": total_plan_cost <= weekly_budget,
-        "schedule": weekly_schedule
+        "household_size": household,
+        "total_cost_zar": round(best_total, 2),
+        "within_budget": best_total <= weekly_budget,
+        "schedule": schedule
     }), 201
 
-# ==========================================
-# FETCH SAVED MEAL PLANS BY USER ID
-# ==========================================
 
-@app.route('/plans/user/<int:user_id>', methods=['GET'])
+# ---------- FETCH SAVED PLANS BY USER ----------
+@app.route('/plans/user/<user_id>', methods=['GET'])
 def get_user_plans(user_id):
-    user_plans = MealPlan.query.filter_by(UserID=user_id).all()
-    
-    if not user_plans:
-        return jsonify({
-            "status": "success",
-            "message": f"No meal plans found for UserID {user_id}",
-            "plans": []
-        }), 200
+    uid = parse_uuid(user_id)
+    if not uid:
+        return jsonify({"status": "error", "message": "UserID must be a valid UUID"}), 400
 
-    plans_data = []
-    for plan in user_plans:
-        plans_data.append({
-            "plan_id": plan.PlanID,
-            "user_id": plan.UserID,
-            "weekly_budget_zar": float(plan.WeeklyBudget),
-            "total_cost_zar": float(plan.TotalCost)
-        })
+    user_plans = MealPlan.query.filter_by(user_id=uid).order_by(MealPlan.created_at.desc()).all()
+
+    plans_data = [{
+        "plan_id": str(p.id),
+        "user_id": str(p.user_id),
+        "plan_name": p.plan_name,
+        "week_start": p.week_start.isoformat() if p.week_start else None,
+        "weekly_budget_zar": float(p.budget_zar),
+        "total_cost_zar": float(p.total_cost) if p.total_cost is not None else 0.0,
+        "is_saved": bool(p.is_saved),
+    } for p in user_plans]
 
     return jsonify({
         "status": "success",
@@ -262,45 +398,44 @@ def get_user_plans(user_id):
         "plans": plans_data
     }), 200
 
-# ==========================================
-# FETCH DETAILED MEAL PLAN BY PLAN ID
-# ==========================================
 
-@app.route('/plans/<int:plan_id>', methods=['GET'])
+# ---------- FETCH ONE DETAILED PLAN ----------
+@app.route('/plans/<plan_id>', methods=['GET'])
 def get_plan_by_id(plan_id):
-    plan = db.session.get(MealPlan, plan_id)
-    
+    pid = parse_uuid(plan_id)
+    if not pid:
+        return jsonify({"status": "error", "message": "PlanID must be a valid UUID"}), 400
+
+    plan = db.session.get(MealPlan, pid)
     if not plan:
-        return jsonify({
-            "status": "error",
-            "message": f"Meal plan with PlanID {plan_id} not found"
-        }), 404
+        return jsonify({"status": "error", "message": f"Meal plan {plan_id} not found"}), 404
+
+    days = MealPlanDay.query.filter_by(plan_id=pid).order_by(MealPlanDay.day_number).all()
+    meal_ids = {x for d in days for x in (d.breakfast_id, d.lunch_id, d.dinner_id) if x}
+    names = {m.id: m.name for m in Meal.query.filter(Meal.id.in_(meal_ids)).all()} if meal_ids else {}
+
+    schedule = [{
+        "day": DAY_NAMES[d.day_number - 1] if 1 <= d.day_number <= 7 else str(d.day_number),
+        "breakfast": names.get(d.breakfast_id),
+        "lunch": names.get(d.lunch_id),
+        "dinner": names.get(d.dinner_id),
+        "day_cost_zar": float(d.day_cost) if d.day_cost is not None else 0.0,
+    } for d in days]
 
     return jsonify({
         "status": "success",
-        "plan_id": plan.PlanID,
-        "user_id": plan.UserID,
-        "weekly_budget_zar": float(plan.WeeklyBudget),
-        "total_cost_zar": float(plan.TotalCost)
+        "plan_id": str(plan.id),
+        "user_id": str(plan.user_id),
+        "plan_name": plan.plan_name,
+        "week_start": plan.week_start.isoformat() if plan.week_start else None,
+        "weekly_budget_zar": float(plan.budget_zar),
+        "household_size": plan.household_size,
+        "total_cost_zar": float(plan.total_cost) if plan.total_cost is not None else 0.0,
+        "schedule": schedule,
+        "created_at": plan.created_at.isoformat() if plan.created_at else None
     }), 200
 
+
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-        if Meal.query.count() == 0:
-            sample_meals = [
-                Meal(Name='Jungle Oats with Milk & Seeds', MealType='breakfast', DietaryTag='vegetarian', EstimatedCost=18.50),
-                Meal(Name='Toast with Scrambled Eggs Substitute', MealType='breakfast', DietaryTag='halal', EstimatedCost=15.00),
-                Meal(Name='Smoothie Bowl', MealType='breakfast', DietaryTag='vegetarian', EstimatedCost=22.00),
-                Meal(Name='Red Beans & Rice Bowl', MealType='lunch', DietaryTag='halal', EstimatedCost=25.00),
-                Meal(Name='Spinach & Cheese Wrap', MealType='lunch', DietaryTag='vegetarian', EstimatedCost=30.00),
-                Meal(Name='Chicken & Veggie Stir-Fry', MealType='lunch', DietaryTag='None', EstimatedCost=35.00),
-                Meal(Name='Pap and Chakalaka with Beans', MealType='dinner', DietaryTag='vegetarian', EstimatedCost=28.00),
-                Meal(Name='Grilled Chicken with Rice & Spinach', MealType='dinner', DietaryTag='halal', EstimatedCost=45.00),
-                Meal(Name='Lentil Stew with Brown Rice', MealType='dinner', DietaryTag='vegetarian', EstimatedCost=22.50)
-            ]
-            db.session.bulk_save_objects(sample_meals)
-            db.session.commit()
-            print("Successfully seeded initial meals into SQLite database!")
-            
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
