@@ -1,8 +1,15 @@
-// Generate view: handles dietary preference forms, calorie targets, and dynamic meal plan generation logic
+
+// Generate view: handles dietary preference forms and meal plan generation
 import React, { useState } from 'react';
 import './Generate.css';
 
-export default function Generate({ setActivePage, onGeneratePlan, currentBudget = 500 }) {
+const API_BASE_URL = 'https://nutrismart-f59i.onrender.com';
+
+export default function Generate({
+  setActivePage,
+  onGeneratePlan,
+  currentBudget = 500
+}) {
   const [budget, setBudget] = useState(currentBudget);
   const [people, setPeople] = useState(2);
   const [selectedTags, setSelectedTags] = useState(['🌿 Vegetarian']);
@@ -20,7 +27,7 @@ export default function Generate({ setActivePage, onGeneratePlan, currentBudget 
 
   const toggleTag = (label) => {
     if (selectedTags.includes(label)) {
-      setSelectedTags(selectedTags.filter((t) => t !== label));
+      setSelectedTags(selectedTags.filter((tag) => tag !== label));
     } else {
       setSelectedTags([...selectedTags, label]);
     }
@@ -31,9 +38,9 @@ export default function Generate({ setActivePage, onGeneratePlan, currentBudget 
     setLoading(true);
     setErrorMessage(null);
 
-    // Map UI tag selection to database tags ('vegetarian', 'halal', or 'None')
     let dietaryPref = 'None';
     const tagString = selectedTags.join(' ').toLowerCase();
+
     if (tagString.includes('vegetarian')) {
       dietaryPref = 'vegetarian';
     } else if (tagString.includes('halal')) {
@@ -41,25 +48,29 @@ export default function Generate({ setActivePage, onGeneratePlan, currentBudget 
     }
 
     try {
-      const response = await fetch('http://127.0.0.1:5000/plans/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          WeeklyBudget: budget,
-          DietaryPreference: dietaryPref,
-          UserID: 1,
-        }),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/plans/generate`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            WeeklyBudget: Number(budget),
+            DietaryPreference: dietaryPref,
+            UserID: 1
+          })
+        }
+      );
 
       const result = await response.json();
 
       if (!response.ok || result.status === 'error') {
-        throw new Error(result.message || 'Failed to generate meal plan from server.');
+        throw new Error(
+          result.message || 'Failed to generate meal plan from server.'
+        );
       }
 
-      // Pass the server-generated 7-day schedule to the App/Dashboard state
       if (onGeneratePlan) {
         onGeneratePlan({
           budget,
@@ -67,15 +78,21 @@ export default function Generate({ setActivePage, onGeneratePlan, currentBudget 
           selectedTags,
           schedule: result.schedule,
           totalCost: result.total_cost_zar,
-          planId: result.plan_id,
+          planId: result.plan_id
         });
       }
 
-      // Navigate directly to Dashboard to display the results
       setActivePage('dashboard');
     } catch (err) {
       console.error('Plan generation failed:', err);
-      setErrorMessage(err.message);
+
+      if (err instanceof TypeError) {
+        setErrorMessage(
+          'Could not connect to the live backend. Please check the server and its CORS settings.'
+        );
+      } else {
+        setErrorMessage(err.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -87,12 +104,15 @@ export default function Generate({ setActivePage, onGeneratePlan, currentBudget 
         <div className="generate-header">
           <span className="section-eyebrow">Smart Customiser</span>
           <h2>Build Your 7-Day Plan</h2>
-          <p>Set your preferences to optimize meal costs against local SA retail prices.</p>
+          <p>
+            Set your preferences to optimize meal costs against local SA retail prices.
+          </p>
         </div>
 
         <form onSubmit={handleGenerate} className="generate-form">
           <div className="form-group">
             <label htmlFor="budget">Weekly Budget (ZAR)</label>
+
             <div className="input-affix-wrapper">
               <span className="input-prefix">R</span>
               <input
@@ -106,11 +126,15 @@ export default function Generate({ setActivePage, onGeneratePlan, currentBudget 
                 required
               />
             </div>
-            <span className="form-hint">Suggested: R350–R600 per person/week</span>
+
+            <span className="form-hint">
+              Suggested: R350–R600 per person/week
+            </span>
           </div>
 
           <div className="form-group">
             <label>Household Size</label>
+
             <div className="stepper-wrapper">
               <button
                 type="button"
@@ -119,7 +143,11 @@ export default function Generate({ setActivePage, onGeneratePlan, currentBudget 
               >
                 −
               </button>
-              <span className="stepper-value">{people} {people === 1 ? 'person' : 'people'}</span>
+
+              <span className="stepper-value">
+                {people} {people === 1 ? 'person' : 'people'}
+              </span>
+
               <button
                 type="button"
                 className="stepper-btn"
@@ -132,9 +160,11 @@ export default function Generate({ setActivePage, onGeneratePlan, currentBudget 
 
           <div className="form-group">
             <label>Dietary Preferences</label>
+
             <div className="dietary-tag-picker">
               {dietaryOptions.map((item) => {
                 const isSelected = selectedTags.includes(item.label);
+
                 return (
                   <button
                     key={item.id}
@@ -150,13 +180,27 @@ export default function Generate({ setActivePage, onGeneratePlan, currentBudget 
           </div>
 
           {errorMessage && (
-            <div style={{ color: '#d63031', fontSize: '0.875rem', marginBottom: '1rem', textAlign: 'center' }}>
+            <div
+              style={{
+                color: '#d63031',
+                fontSize: '0.875rem',
+                marginBottom: '1rem',
+                textAlign: 'center'
+              }}
+              role="alert"
+            >
               ⚠️ {errorMessage}
             </div>
           )}
 
-          <button type="submit" className="generate-submit-btn" disabled={loading}>
-            {loading ? '⏳ Optimizing ingredients…' : '✨ Generate My 7-Day Plan'}
+          <button
+            type="submit"
+            className="generate-submit-btn"
+            disabled={loading}
+          >
+            {loading
+              ? '⏳ Optimizing ingredients…'
+              : '✨ Generate My 7-Day Plan'}
           </button>
         </form>
       </div>
