@@ -10,7 +10,7 @@ from sqlalchemy import func, Text
 from sqlalchemy.dialects.postgresql import UUID, ARRAY
 from werkzeug.security import generate_password_hash, check_password_hash
 
-app = Flask(_name_)
+app = Flask(__name__)
 
 # ==========================================
 # CORS: lets the React frontend (a different website) call this API.
@@ -18,7 +18,7 @@ app = Flask(_name_)
 # ALLOWED_ORIGINS in Render > Environment (comma separated addresses).
 # ==========================================
 _origins = os.environ.get('ALLOWED_ORIGINS', '*')
-allowed_origins = '' if _origins.strip() == '' else [o.strip() for o in _origins.split(',') if o.strip()]
+allowed_origins = '*' if _origins.strip() == '*' else [o.strip() for o in _origins.split(',') if o.strip()]
 CORS(app, resources={r"/*": {"origins": allowed_origins}})
 
 # ==========================================
@@ -42,7 +42,7 @@ db = SQLAlchemy(app)
 # ==========================================
 
 class User(db.Model):
-    _tablename_ = 'users'
+    __tablename__ = 'users'
     id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     full_name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(255), unique=True, nullable=False)
@@ -54,7 +54,7 @@ class User(db.Model):
 
 
 class Ingredient(db.Model):
-    _tablename_ = 'ingredients'
+    __tablename__ = 'ingredients'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), unique=True, nullable=False)
     category = db.Column(db.String(50), nullable=False)
@@ -69,7 +69,7 @@ class Ingredient(db.Model):
 
 
 class Meal(db.Model):
-    _tablename_ = 'meals'
+    __tablename__ = 'meals'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), unique=True, nullable=False)
     meal_type = db.Column(db.String(20), nullable=False)   # breakfast / lunch / dinner
@@ -81,7 +81,7 @@ class Meal(db.Model):
 
 
 class MealIngredient(db.Model):
-    _tablename_ = 'meal_ingredients'
+    __tablename__ = 'meal_ingredients'
     id = db.Column(db.Integer, primary_key=True)
     meal_id = db.Column(db.Integer, db.ForeignKey('meals.id'), nullable=False)
     ingredient_id = db.Column(db.Integer, db.ForeignKey('ingredients.id'))
@@ -89,7 +89,7 @@ class MealIngredient(db.Model):
 
 
 class MealPlan(db.Model):
-    _tablename_ = 'meal_plans'
+    __tablename__ = 'meal_plans'
     id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'))
     week_start = db.Column(db.Date, nullable=False)
@@ -102,7 +102,7 @@ class MealPlan(db.Model):
 
 
 class MealPlanDay(db.Model):
-    _tablename_ = 'meal_plan_days'
+    __tablename__ = 'meal_plan_days'
     id = db.Column(db.Integer, primary_key=True)
     plan_id = db.Column(UUID(as_uuid=True), db.ForeignKey('meal_plans.id'))
     day_number = db.Column(db.Integer, nullable=False)     # 1 = Monday ... 7 = Sunday
@@ -188,7 +188,7 @@ def register():
         db.session.commit()
     except Exception as e:
         db.session.rollback()
-        return jsonify({"status": "error", "message": f"Could not register user: {e._class.name_}"}), 500
+        return jsonify({"status": "error", "message": f"Could not register user: {e.__class__.__name__}"}), 500
 
     return jsonify({
         "status": "success",
@@ -263,7 +263,7 @@ def add_product():
         db.session.commit()
     except Exception as e:
         db.session.rollback()
-        return jsonify({"status": "error", "message": f"Could not add product: {e._class.name_}"}), 500
+        return jsonify({"status": "error", "message": f"Could not add product: {e.__class__.__name__}"}), 500
     return jsonify({"status": "success", "message": "Product added successfully"}), 201
 
 
@@ -369,7 +369,7 @@ def generate_7day_plan():
         db.session.commit()
     except Exception as e:
         db.session.rollback()
-        return jsonify({"status": "error", "message": f"Could not save plan: {e._class.name_}"}), 500
+        return jsonify({"status": "error", "message": f"Could not save plan: {e.__class__.__name__}"}), 500
 
     return jsonify({
         "status": "success",
@@ -446,6 +446,6 @@ def get_plan_by_id(plan_id):
     }), 200
 
 
-if _name_ == '_main_':
+if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
