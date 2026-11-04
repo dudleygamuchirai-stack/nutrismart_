@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import Navbar from './components/Navbar';
 import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import Generate from './pages/Generate';
 import Palette from './pages/Palette';
+import Auth from './pages/Auth';
 import './App.css';
 
 const INITIAL_PLAN = {
@@ -32,10 +33,10 @@ const INITIAL_SHOPPING_CATEGORIES = [
     color: '#e0f2fe',
     badgeColor: '#0284c7',
     items: [
-      { id: 'p1', name: 'Chicken Breast (2 pack)', detail: '800g · Pick n Pay', price: 62.99, checked: false },
-      { id: 'p2', name: 'Eggs (6 pack)', detail: '6 units · Checkers', price: 34.99, checked: true },
-      { id: 'p3', name: 'Tuna in brine (2 tins)', detail: '2 x 170g · Pick n Pay', price: 26.00, checked: false },
-      { id: 'p4', name: 'Lentils (dry)', detail: '500g · Pick n Pay', price: 18.99, checked: false },
+      { id: 'p1', name: 'Chicken Breast (2 pack)', detail: '800g Â· Pick n Pay', price: 62.99, checked: false },
+      { id: 'p2', name: 'Eggs (6 pack)', detail: '6 units Â· Checkers', price: 34.99, checked: true },
+      { id: 'p3', name: 'Tuna in brine (2 tins)', detail: '2 x 170g Â· Pick n Pay', price: 26.00, checked: false },
+      { id: 'p4', name: 'Lentils (dry)', detail: '500g Â· Pick n Pay', price: 18.99, checked: false }
     ]
   },
   {
@@ -45,9 +46,9 @@ const INITIAL_SHOPPING_CATEGORIES = [
     color: '#ecfdf5',
     badgeColor: '#059669',
     items: [
-      { id: 'g1', name: 'Jungle Oats (1kg)', detail: '1kg · Checkers', price: 38.99, checked: true },
-      { id: 'g2', name: 'White Maize Meal (2kg)', detail: '2 kg · Shoprite', price: 22.50, checked: false },
-      { id: 'g3', name: 'Brown Bread', detail: '1 loaf · Pick n Pay', price: 17.00, checked: false }
+      { id: 'g1', name: 'Jungle Oats (1kg)', detail: '1kg Â· Checkers', price: 38.99, checked: true },
+      { id: 'g2', name: 'White Maize Meal (2kg)', detail: '2 kg Â· Shoprite', price: 22.50, checked: false },
+      { id: 'g3', name: 'Brown Bread', detail: '1 loaf Â· Pick n Pay', price: 17.00, checked: false }
     ]
   }
 ];
@@ -58,7 +59,6 @@ const FEATURED_RECIPES = [
   { id: 3, name: 'Lentil Stew with Brown Rice', type: 'DINNER', price: 'R22.50', time: '35 mins', tag: 'Budget Saver' }
 ];
 
-// Clean monochrome SVG icons matching project design tokens
 const Icons = {
   Dashboard: () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -113,10 +113,11 @@ const Icons = {
   )
 };
 
-function Sidebar({ activePage, setActivePage }) {
+function Sidebar({ activePage, setActivePage, user }) {
   const handleScrollToPlan = () => {
     if (activePage !== 'dashboard') {
       setActivePage('dashboard');
+
       setTimeout(() => {
         const el = document.querySelector('.dashboard-grid');
         if (el) el.scrollIntoView({ behavior: 'smooth' });
@@ -127,10 +128,19 @@ function Sidebar({ activePage, setActivePage }) {
     }
   };
 
+  const initials = (user?.FullName || 'User')
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+
   return (
     <aside className="app-sidebar">
       <div className="sidebar-section">
         <span className="sidebar-label">MAIN</span>
+
         <nav className="sidebar-nav">
           <button
             type="button"
@@ -140,6 +150,7 @@ function Sidebar({ activePage, setActivePage }) {
             <span className="sidebar-icon"><Icons.Dashboard /></span>
             Dashboard
           </button>
+
           <button
             type="button"
             className={`sidebar-link ${activePage === 'generate' ? 'active' : ''}`}
@@ -148,6 +159,7 @@ function Sidebar({ activePage, setActivePage }) {
             <span className="sidebar-icon"><Icons.Generate /></span>
             Generate Plan
           </button>
+
           <button
             type="button"
             className="sidebar-link"
@@ -156,6 +168,7 @@ function Sidebar({ activePage, setActivePage }) {
             <span className="sidebar-icon"><Icons.Calendar /></span>
             My Plan
           </button>
+
           <button
             type="button"
             className={`sidebar-link ${activePage === 'shopping' ? 'active' : ''}`}
@@ -169,6 +182,7 @@ function Sidebar({ activePage, setActivePage }) {
 
       <div className="sidebar-section">
         <span className="sidebar-label">ACCOUNT</span>
+
         <nav className="sidebar-nav">
           <button
             type="button"
@@ -178,6 +192,7 @@ function Sidebar({ activePage, setActivePage }) {
             <span className="sidebar-icon"><Icons.Folder /></span>
             Plan History
           </button>
+
           <button
             type="button"
             className={`sidebar-link ${activePage === 'saved' ? 'active' : ''}`}
@@ -186,6 +201,7 @@ function Sidebar({ activePage, setActivePage }) {
             <span className="sidebar-icon"><Icons.Heart /></span>
             Saved Plans
           </button>
+
           <button
             type="button"
             className={`sidebar-link ${activePage === 'profile' ? 'active' : ''}`}
@@ -198,9 +214,12 @@ function Sidebar({ activePage, setActivePage }) {
       </div>
 
       <div className="sidebar-user">
-        <div className="sidebar-avatar">TM</div>
+        <div className="sidebar-avatar">{initials}</div>
+
         <div className="sidebar-user-info">
-          <span className="sidebar-user-name">Thabo Mokoena</span>
+          <span className="sidebar-user-name">
+            {user?.FullName || 'NutriSmart User'}
+          </span>
           <span className="sidebar-user-tier">Free plan</span>
         </div>
       </div>
@@ -214,7 +233,8 @@ function FullShoppingListView() {
   const toggleItem = (catIdx, itemIdx) => {
     setCategories((prev) => {
       const next = JSON.parse(JSON.stringify(prev));
-      next[catIdx].items[itemIdx].checked = !next[catIdx].items[itemIdx].checked;
+      next[catIdx].items[itemIdx].checked =
+        !next[catIdx].items[itemIdx].checked;
       return next;
     });
   };
@@ -224,8 +244,9 @@ function FullShoppingListView() {
       <div className="shopping-header">
         <div>
           <h2>Shopping List</h2>
-          <p>Week of 19 – 25 May 2026 · Tap items to mark as collected</p>
+          <p>Week of 19 â€“ 25 May 2026 Â· Tap items to mark as collected</p>
         </div>
+
         <button className="print-btn" onClick={() => window.print()}>
           <Icons.Printer /> Print / Export
         </button>
@@ -237,12 +258,17 @@ function FullShoppingListView() {
             <div key={cat.category} className="shopping-cat-card">
               <div className="shopping-cat-header">
                 <div className="cat-title">
-                  <span className="cat-dot" style={{ backgroundColor: cat.badgeColor }}></span>
+                  <span
+                    className="cat-dot"
+                    style={{ backgroundColor: cat.badgeColor }}
+                  ></span>
                   <strong>{cat.category}</strong>
                   <span className="cat-count">{cat.count}</span>
                 </div>
+
                 <span className="cat-subtotal">{cat.subtotal}</span>
               </div>
+
               <div className="shopping-cat-items">
                 {cat.items.map((item, itemIdx) => (
                   <div
@@ -254,13 +280,18 @@ function FullShoppingListView() {
                       type="checkbox"
                       checked={item.checked}
                       onChange={() => toggleItem(catIdx, itemIdx)}
+                      onClick={(event) => event.stopPropagation()}
                       className="custom-checkbox"
                     />
+
                     <div className="item-text">
                       <span className="item-name">{item.name}</span>
                       <span className="item-detail">{item.detail}</span>
                     </div>
-                    <span className="item-price">R{item.price.toFixed(2)}</span>
+
+                    <span className="item-price">
+                      R{item.price.toFixed(2)}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -271,23 +302,28 @@ function FullShoppingListView() {
         <div className="shopping-summary-column">
           <div className="cost-summary-card">
             <h3>Cost Summary</h3>
+
             <div className="summary-breakdown-list">
               <div className="summary-row">
                 <span>Protein items</span>
                 <strong>R142.00</strong>
               </div>
+
               <div className="summary-row">
                 <span>Grains & Starches</span>
                 <strong>R68.50</strong>
               </div>
+
               <div className="summary-row">
                 <span>Produce</span>
                 <strong>R78.50</strong>
               </div>
+
               <div className="summary-row">
                 <span>Dairy</span>
                 <strong>R58.50</strong>
               </div>
+
               <div className="summary-row">
                 <span>Condiments</span>
                 <strong>R50.00</strong>
@@ -299,7 +335,9 @@ function FullShoppingListView() {
             <div className="summary-total-area">
               <span className="total-label">Total Estimate</span>
               <div className="total-value">R418.50</div>
-              <span className="budget-target">of R500.00 weekly budget</span>
+              <span className="budget-target">
+                of R500.00 weekly budget
+              </span>
             </div>
 
             <div className="summary-savings-pill">
@@ -320,94 +358,259 @@ function PlanHistoryView({ setActivePage }) {
         <h2>Plan History</h2>
         <p>Review your previous weekly grocery plans and expenditure</p>
       </header>
+
       <div className="account-cards-grid">
         <div className="account-card">
           <div className="account-card-badge">COMPLETED</div>
-          <h3>Week of 12 – 18 May 2026</h3>
-          <p className="card-subtext">21 Meals Planned · Checkers</p>
-          <div className="card-metric">Spent: <strong>R412.00</strong> / R500.00</div>
+          <h3>Week of 12 â€“ 18 May 2026</h3>
+          <p className="card-subtext">21 Meals Planned Â· Checkers</p>
+          <div className="card-metric">
+            Spent: <strong>R412.00</strong> / R500.00
+          </div>
         </div>
+
         <div className="account-card">
           <div className="account-card-badge">COMPLETED</div>
-          <h3>Week of 5 – 11 May 2026</h3>
-          <p className="card-subtext">21 Meals Planned · Shoprite</p>
-          <div className="card-metric">Spent: <strong>R395.50</strong> / R500.00</div>
+          <h3>Week of 5 â€“ 11 May 2026</h3>
+          <p className="card-subtext">21 Meals Planned Â· Shoprite</p>
+          <div className="card-metric">
+            Spent: <strong>R395.50</strong> / R500.00
+          </div>
         </div>
       </div>
-      <button className="back-dash-btn" onClick={() => setActivePage('dashboard')}>
-        ← Back to Dashboard
+
+      <button
+        className="back-dash-btn"
+        onClick={() => setActivePage('dashboard')}
+      >
+        â† Back to Dashboard
       </button>
     </div>
   );
 }
 
 function SavedPlansView({ setActivePage }) {
+  const [selectedPlan, setSelectedPlan] = useState(null);
+
+  const plans = [
+    {
+      id: 'budget',
+      title: 'Budget Student Saver',
+      description: 'Affordable meals featuring pap, beans and oats.',
+      cost: 'R380.00',
+      meals: [
+        ['Jungle Oats', 'Pap and beans', 'Chicken stew and vegetables'],
+        ['Toast and eggs', 'Rice and chakalaka', 'Bean stew and pap'],
+        ['Oats and banana', 'Pap and spinach', 'Chicken and rice'],
+        ['Boiled eggs and toast', 'Beans and rice', 'Vegetable stew and pap'],
+        ['Jungle Oats', 'Chicken and vegetables', 'Pap and beans'],
+        ['Peanut butter toast', 'Rice and beans', 'Chicken stew'],
+        ['Oats and banana', 'Pap and vegetables', 'Eggs and rice']
+      ]
+    },
+    {
+      id: 'protein',
+      title: 'High Protein Lean Plan',
+      description: 'Balanced meals featuring grilled chicken and eggs.',
+      cost: 'R450.00',
+      meals: [
+        ['Boiled eggs and oats', 'Grilled chicken and rice', 'Chicken salad'],
+        ['Eggs and wholewheat toast', 'Chicken and vegetables', 'Tuna salad'],
+        ['Greek yoghurt and oats', 'Grilled chicken and sweet potato', 'Egg omelette'],
+        ['Scrambled eggs', 'Chicken rice bowl', 'Grilled fish and vegetables'],
+        ['Oats and boiled eggs', 'Chicken salad', 'Eggs and sweet potato'],
+        ['Greek yoghurt and banana', 'Grilled chicken and rice', 'Tuna and vegetables'],
+        ['Egg omelette and toast', 'Chicken and vegetables', 'Grilled fish and salad']
+      ]
+    }
+  ];
+
+  const days = [
+    'Monday', 'Tuesday', 'Wednesday', 'Thursday',
+    'Friday', 'Saturday', 'Sunday'
+  ];
+
+  if (selectedPlan) {
+    return (
+      <div className="page-view-container">
+        <header className="page-view-header">
+          <h2>{selectedPlan.title}</h2>
+          <p>{selectedPlan.description}</p>
+        </header>
+
+        <div className="account-card" style={{ marginBottom: '20px' }}>
+          <h3>Weekly Meal Plan</h3>
+          <p>Estimated weekly cost: <strong>{selectedPlan.cost}</strong></p>
+        </div>
+
+        {days.map((day, index) => (
+          <div key={day} className="account-card" style={{ marginBottom: '15px' }}>
+            <h3>{day}</h3>
+            <p><strong>🥣 Breakfast:</strong> {selectedPlan.meals[index][0]}</p>
+            <p><strong>🍛 Lunch:</strong> {selectedPlan.meals[index][1]}</p>
+            <p><strong>🍽️ Dinner:</strong> {selectedPlan.meals[index][2]}</p>
+          </div>
+        ))}
+
+        <button className="back-dash-btn" onClick={() => setSelectedPlan(null)}>
+          ← Back to Saved Plans
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="page-view-container">
       <header className="page-view-header">
         <h2>Saved Plans</h2>
         <p>Your pinned meal routines and favorite weekly recipes</p>
       </header>
+
       <div className="account-cards-grid">
-        <div className="account-card">
-          <div className="account-card-badge active-tag">FAVORITE</div>
-          <h3>Budget Student Saver</h3>
-          <p className="card-subtext">High protein staples featuring Pap, Beans, and Oats</p>
-          <div className="card-metric">Estimated: <strong>R380.00 / week</strong></div>
-        </div>
-        <div className="account-card">
-          <div className="account-card-badge active-tag">FAVORITE</div>
-          <h3>High Protein Lean Plan</h3>
-          <p className="card-subtext">Balanced macros with grilled chicken and eggs</p>
-          <div className="card-metric">Estimated: <strong>R450.00 / week</strong></div>
-        </div>
+        {plans.map((plan) => (
+          <button
+            key={plan.id}
+            type="button"
+            className="account-card"
+            onClick={() => setSelectedPlan(plan)}
+            style={{
+              cursor: 'pointer',
+              textAlign: 'left',
+              width: '100%',
+              fontFamily: 'inherit'
+            }}
+          >
+            <div className="account-card-badge active-tag">FAVORITE</div>
+            <h3>{plan.title}</h3>
+            <p className="card-subtext">{plan.description}</p>
+            <div className="card-metric">
+              Estimated: <strong>{plan.cost} / week</strong>
+            </div>
+            <p style={{ color: '#059669', fontWeight: '600' }}>
+              View Meal Plan →
+            </p>
+          </button>
+        ))}
       </div>
+
       <button className="back-dash-btn" onClick={() => setActivePage('dashboard')}>
         ← Back to Dashboard
       </button>
     </div>
   );
 }
+function ProfileView({ setActivePage, user }) {
+  const initials = (user?.FullName || 'User')
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
 
-function ProfileView({ setActivePage }) {
   return (
     <div className="page-view-container">
       <header className="page-view-header">
         <h2>User Profile</h2>
         <p>Account preferences and weekly nutritional goals</p>
       </header>
+
       <div className="profile-details-card">
-        <div className="profile-avatar-large">TM</div>
+        <div className="profile-avatar-large">{initials}</div>
+
         <div className="profile-rows">
           <div className="profile-row">
             <span>Full Name:</span>
-            <strong>Thabo Mokoena</strong>
+            <strong>{user?.FullName || 'Not available'}</strong>
           </div>
+
           <div className="profile-row">
             <span>Email:</span>
-            <strong>thabo.mokoena@gmail.com</strong>
+            <strong>{user?.Email || 'Not available'}</strong>
           </div>
+
           <div className="profile-row">
             <span>Plan Tier:</span>
             <strong>Free Student Tier</strong>
           </div>
+
           <div className="profile-row">
             <span>Default Weekly Budget:</span>
             <strong>R500.00</strong>
           </div>
         </div>
       </div>
-      <button className="back-dash-btn" onClick={() => setActivePage('dashboard')}>
-        ← Back to Dashboard
+
+      <button
+        className="back-dash-btn"
+        onClick={() => setActivePage('dashboard')}
+      >
+        â† Back to Dashboard
       </button>
     </div>
   );
 }
 
 export default function App() {
-  const [activePage, setActivePage] = useState('dashboard');
+  const getStoredUser = () => {
+    const userId = localStorage.getItem('userId');
+
+    const uuidPattern =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+    if (!userId || !uuidPattern.test(userId)) {
+      return null;
+    }
+
+    return {
+      UserID: userId,
+      FullName: localStorage.getItem('userName') || 'NutriSmart User',
+      Email: localStorage.getItem('userEmail') || ''
+    };
+  };
+
+  const [user, setUser] = useState(getStoredUser);
+
+  const [activePage, setActivePage] = useState(() =>
+    getStoredUser() ? 'dashboard' : 'landing'
+  );
+
   const [planData, setPlanData] = useState(INITIAL_PLAN);
   const [featuredRecipe, setFeaturedRecipe] = useState(FEATURED_RECIPES[0]);
+
+  const handleAuthSuccess = (loggedInUser) => {
+    setUser(loggedInUser);
+    setActivePage('dashboard');
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('userId');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userEmail');
+
+    setUser(null);
+    setPlanData(INITIAL_PLAN);
+    setActivePage('landing');
+  };
+
+  const handlePageChange = (page) => {
+    const protectedPages = [
+      'dashboard',
+      'generate',
+      'shopping',
+      'palette',
+      'history',
+      'saved',
+      'profile'
+    ];
+
+    if (protectedPages.includes(page) && !user) {
+      setActivePage('login');
+      return;
+    }
+
+    setActivePage(page);
+  };
 
   const handleGeneratePlan = (newPlan) => {
     setPlanData((prev) => ({
@@ -415,15 +618,22 @@ export default function App() {
       budget: Number(newPlan.budget) || prev.budget,
       spent: Number(newPlan.totalCost ?? newPlan.spent ?? prev.spent),
       totalCost: Number(newPlan.totalCost ?? newPlan.spent ?? prev.spent),
-      schedule: newPlan.schedule && newPlan.schedule.length > 0 ? newPlan.schedule : prev.schedule,
-      planId: newPlan.planId || prev.planId,
+      schedule:
+        newPlan.schedule && newPlan.schedule.length > 0
+          ? newPlan.schedule
+          : prev.schedule,
+      planId: newPlan.planId || prev.planId
     }));
   };
 
   const handleSwapRecipe = () => {
     setFeaturedRecipe((prev) => {
-      const currentIndex = FEATURED_RECIPES.findIndex((r) => r.name === prev.name);
+      const currentIndex = FEATURED_RECIPES.findIndex(
+        (recipe) => recipe.name === prev.name
+      );
+
       const nextIndex = (currentIndex + 1) % FEATURED_RECIPES.length;
+
       return FEATURED_RECIPES[nextIndex];
     });
   };
@@ -431,7 +641,6 @@ export default function App() {
   return (
     <div className="app-layout">
       <style>{`
-        /* Global Reset & Scrolling */
         html, body {
           margin: 0;
           padding: 0;
@@ -439,7 +648,6 @@ export default function App() {
           font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
-        /* 1. Locked Top Navigation Bar */
         .fixed-navbar-shell {
           position: fixed;
           top: 0;
@@ -450,7 +658,6 @@ export default function App() {
           background-color: #0c232c;
         }
 
-        /* 2. Locked Left Navigation Sidebar */
         .app-sidebar {
           position: fixed;
           top: 65px;
@@ -472,6 +679,7 @@ export default function App() {
         .sidebar-section {
           margin-bottom: 2rem;
         }
+
         .sidebar-label {
           display: block;
           font-size: 0.68rem;
@@ -481,11 +689,13 @@ export default function App() {
           margin-bottom: 0.75rem;
           padding-left: 0.75rem;
         }
+
         .sidebar-nav {
           display: flex;
           flex-direction: column;
           gap: 0.25rem;
         }
+
         .sidebar-link {
           display: flex;
           align-items: center;
@@ -503,15 +713,18 @@ export default function App() {
           transition: all 0.2s ease;
           font-family: inherit;
         }
+
         .sidebar-link:hover {
           background: rgba(255, 255, 255, 0.06);
           color: #ffffff;
         }
+
         .sidebar-link.active {
           background: #1b3846;
           color: #ffffff;
           font-weight: 600;
         }
+
         .sidebar-icon {
           display: flex;
           align-items: center;
@@ -520,6 +733,7 @@ export default function App() {
           width: 20px;
           height: 20px;
         }
+
         .sidebar-user {
           margin-top: auto;
           display: flex;
@@ -528,6 +742,7 @@ export default function App() {
           padding-top: 1rem;
           border-top: 1px solid rgba(255, 255, 255, 0.08);
         }
+
         .sidebar-avatar {
           width: 36px;
           height: 36px;
@@ -541,11 +756,13 @@ export default function App() {
           font-weight: 700;
           flex-shrink: 0;
         }
+
         .sidebar-user-info {
           display: flex;
           flex-direction: column;
           overflow: hidden;
         }
+
         .sidebar-user-name {
           color: #ffffff;
           font-size: 0.84rem;
@@ -554,18 +771,19 @@ export default function App() {
           text-overflow: ellipsis;
           overflow: hidden;
         }
+
         .sidebar-user-tier {
           color: #64748b;
           font-size: 0.72rem;
         }
 
-        /* 3. Main Body Container */
         .app-body {
           margin-top: 65px;
           margin-left: 240px;
           min-height: calc(100vh - 65px);
           background-color: #f8fafc;
         }
+
         .app-body.no-sidebar {
           margin-left: 0;
         }
@@ -576,27 +794,30 @@ export default function App() {
           background-color: #f8fafc;
         }
 
-        /* Shopping List View */
         .shopping-page-wrapper {
           padding: 2.2rem 2.5rem;
           max-width: 1100px;
         }
+
         .shopping-header {
           display: flex;
           justify-content: space-between;
           align-items: flex-start;
           margin-bottom: 2rem;
         }
+
         .shopping-header h2 {
           font-family: 'Fraunces', serif;
           font-size: 1.85rem;
           color: #0c232c;
           margin-bottom: 0.25rem;
         }
+
         .shopping-header p {
           color: #64748b;
           font-size: 0.95rem;
         }
+
         .print-btn {
           display: inline-flex;
           align-items: center;
@@ -611,20 +832,24 @@ export default function App() {
           cursor: pointer;
           transition: background 0.2s;
         }
+
         .print-btn:hover {
           background-color: #047857;
         }
+
         .shopping-content-grid {
           display: grid;
           grid-template-columns: 1fr 340px;
           gap: 2rem;
           align-items: start;
         }
+
         .shopping-categories-column {
           display: flex;
           flex-direction: column;
           gap: 1.5rem;
         }
+
         .shopping-cat-card {
           background: #ffffff;
           border: 1px solid #e2e8f0;
@@ -632,6 +857,7 @@ export default function App() {
           overflow: hidden;
           box-shadow: 0 1px 3px rgba(0,0,0,0.04);
         }
+
         .shopping-cat-header {
           display: flex;
           justify-content: space-between;
@@ -640,6 +866,7 @@ export default function App() {
           background-color: #f8fafc;
           border-bottom: 1px solid #e2e8f0;
         }
+
         .cat-title {
           display: flex;
           align-items: center;
@@ -647,21 +874,25 @@ export default function App() {
           font-size: 0.95rem;
           color: #0c232c;
         }
+
         .cat-dot {
           width: 8px;
           height: 8px;
           border-radius: 50%;
         }
+
         .cat-count {
           color: #64748b;
           font-size: 0.82rem;
           font-weight: 400;
         }
+
         .cat-subtotal {
           font-weight: 700;
           color: #059669;
           font-size: 0.9rem;
         }
+
         .shopping-item-row {
           display: flex;
           align-items: center;
@@ -670,19 +901,24 @@ export default function App() {
           cursor: pointer;
           transition: background 0.15s;
         }
+
         .shopping-item-row:last-child {
           border-bottom: none;
         }
+
         .shopping-item-row:hover {
           background-color: #f8fafc;
         }
+
         .shopping-item-row.checked {
           background-color: #fafbfc;
         }
+
         .shopping-item-row.checked .item-name {
           text-decoration: line-through;
           color: #94a3b8;
         }
+
         .custom-checkbox {
           width: 18px;
           height: 18px;
@@ -690,27 +926,30 @@ export default function App() {
           margin-right: 1rem;
           cursor: pointer;
         }
+
         .item-text {
           flex: 1;
           display: flex;
           flex-direction: column;
         }
+
         .item-name {
           font-size: 0.92rem;
           font-weight: 500;
           color: #1e293b;
         }
+
         .item-detail {
           font-size: 0.78rem;
           color: #64748b;
         }
+
         .item-price {
           font-weight: 600;
           color: #1e293b;
           font-size: 0.92rem;
         }
 
-        /* 4. Cost Summary Card (Sticky/Floating beside groceries) */
         .cost-summary-card {
           background-color: #0c232c;
           color: #ffffff;
@@ -720,36 +959,43 @@ export default function App() {
           position: sticky;
           top: 85px;
         }
+
         .cost-summary-card h3 {
           font-size: 1.15rem;
           font-weight: 700;
           margin-bottom: 1.25rem;
           color: #ffffff;
         }
+
         .summary-breakdown-list {
           display: flex;
           flex-direction: column;
           gap: 0.75rem;
         }
+
         .summary-row {
           display: flex;
           justify-content: space-between;
           font-size: 0.88rem;
           color: #cbd5e1;
         }
+
         .summary-row strong {
           color: #ffffff;
         }
+
         .summary-divider {
           height: 1px;
           background-color: rgba(255,255,255,0.12);
           margin: 1.25rem 0;
         }
+
         .summary-total-area {
           display: flex;
           flex-direction: column;
           margin-bottom: 1.25rem;
         }
+
         .total-label {
           font-size: 0.78rem;
           color: #94a3b8;
@@ -757,16 +1003,19 @@ export default function App() {
           letter-spacing: 0.05em;
           margin-bottom: 0.25rem;
         }
+
         .total-value {
           font-family: 'Fraunces', serif;
           font-size: 2rem;
           font-weight: 700;
           color: #34d399;
         }
+
         .budget-target {
           font-size: 0.82rem;
           color: #94a3b8;
         }
+
         .summary-savings-pill {
           background-color: rgba(5, 150, 105, 0.2);
           border: 1px solid rgba(52, 211, 153, 0.3);
@@ -778,33 +1027,37 @@ export default function App() {
           color: #34d399;
           font-size: 0.85rem;
         }
+
         .summary-savings-pill small {
           color: #94a3b8;
           font-size: 0.75rem;
         }
 
-        /* Account Sub-pages */
         .page-view-container {
           padding: 2.5rem;
           max-width: 860px;
         }
+
         .page-view-header h2 {
           font-family: 'Fraunces', serif;
           font-size: 1.8rem;
           color: #0c232c;
           margin-bottom: 0.25rem;
         }
+
         .page-view-header p {
           color: #64748b;
           font-size: 0.95rem;
           margin-bottom: 2rem;
         }
+
         .account-cards-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
           gap: 1.25rem;
           margin-bottom: 2rem;
         }
+
         .account-card {
           background: #ffffff;
           border: 1px solid #e2e8f0;
@@ -812,6 +1065,7 @@ export default function App() {
           padding: 1.5rem;
           box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
+
         .account-card-badge {
           display: inline-block;
           font-size: 0.7rem;
@@ -822,26 +1076,31 @@ export default function App() {
           border-radius: 4px;
           margin-bottom: 0.75rem;
         }
+
         .account-card-badge.active-tag {
           color: #059669;
           background: #d1fae5;
         }
+
         .account-card h3 {
           font-size: 1.1rem;
           color: #0c232c;
           margin-bottom: 0.35rem;
         }
+
         .card-subtext {
           font-size: 0.85rem;
           color: #64748b;
           margin-bottom: 1rem;
         }
+
         .card-metric {
           font-size: 0.9rem;
           color: #334155;
           padding-top: 0.75rem;
           border-top: 1px solid #f1f5f9;
         }
+
         .profile-details-card {
           background: #ffffff;
           border: 1px solid #e2e8f0;
@@ -852,6 +1111,7 @@ export default function App() {
           align-items: center;
           margin-bottom: 2rem;
         }
+
         .profile-avatar-large {
           width: 72px;
           height: 72px;
@@ -865,12 +1125,14 @@ export default function App() {
           font-weight: 700;
           flex-shrink: 0;
         }
+
         .profile-rows {
           display: flex;
           flex-direction: column;
           gap: 0.75rem;
           width: 100%;
         }
+
         .profile-row {
           display: flex;
           justify-content: space-between;
@@ -878,12 +1140,15 @@ export default function App() {
           padding-bottom: 0.4rem;
           font-size: 0.92rem;
         }
+
         .profile-row span {
           color: #64748b;
         }
+
         .profile-row strong {
           color: #0c232c;
         }
+
         .back-dash-btn {
           background: #059669;
           color: #ffffff;
@@ -895,43 +1160,137 @@ export default function App() {
           font-size: 0.88rem;
           transition: background 0.2s ease;
         }
+
         .back-dash-btn:hover {
           background: #047857;
         }
+
+        @media (max-width: 900px) {
+          .app-sidebar {
+            width: 200px;
+          }
+
+          .app-body {
+            margin-left: 200px;
+          }
+
+          .shopping-content-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        @media (max-width: 650px) {
+          .app-sidebar {
+            display: none;
+          }
+
+          .app-body {
+            margin-left: 0;
+          }
+
+          .shopping-page-wrapper,
+          .page-view-container {
+            padding: 1.25rem;
+          }
+
+          .shopping-header {
+            flex-direction: column;
+            gap: 1rem;
+          }
+
+          .profile-details-card {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+
+          .profile-row {
+            gap: 1rem;
+            flex-wrap: wrap;
+          }
+        }
       `}</style>
 
-      {/* 1. Fixed Top Navbar */}
       <div className="fixed-navbar-shell">
-        <Navbar activePage={activePage} setActivePage={setActivePage} />
+        <Navbar
+          activePage={activePage}
+          setActivePage={handlePageChange}
+          user={user}
+          onLogout={handleLogout}
+        />
       </div>
 
-      {/* 2. Page Body with Fixed Sidebar + Content */}
-      <div className={`app-body ${activePage === 'landing' ? 'no-sidebar' : ''}`}>
-        {activePage !== 'landing' && (
-          <Sidebar activePage={activePage} setActivePage={setActivePage} />
-        )}
+      <div
+        className={`app-body ${
+          activePage === 'landing' ||
+          activePage === 'login' ||
+          activePage === 'register'
+            ? 'no-sidebar'
+            : ''
+        }`}
+      >
+        {user &&
+          activePage !== 'landing' &&
+          activePage !== 'login' &&
+          activePage !== 'register' && (
+            <Sidebar
+              activePage={activePage}
+              setActivePage={handlePageChange}
+              user={user}
+            />
+          )}
+
         <main className="app-main-content">
-          {activePage === 'landing' && <Landing setActivePage={setActivePage} />}
-          {activePage === 'dashboard' && (
-            <Dashboard
+          {activePage === 'landing' && (
+            <Landing setActivePage={handlePageChange} />
+          )}
+
+          {(activePage === 'login' || activePage === 'register') && (
+            <Auth
+              mode={activePage}
               setActivePage={setActivePage}
+              onAuthSuccess={handleAuthSuccess}
+            />
+          )}
+
+          {activePage === 'dashboard' && user && (
+            <Dashboard
+              setActivePage={handlePageChange}
               planData={planData}
               featuredRecipe={featuredRecipe}
               onSwapRecipe={handleSwapRecipe}
             />
           )}
-          {activePage === 'generate' && (
+
+          {activePage === 'generate' && user && (
             <Generate
-              setActivePage={setActivePage}
+              setActivePage={handlePageChange}
               onGeneratePlan={handleGeneratePlan}
               currentBudget={planData.budget}
             />
           )}
-          {activePage === 'shopping' && <FullShoppingListView />}
-          {activePage === 'palette' && <Palette setActivePage={setActivePage} />}
-          {activePage === 'history' && <PlanHistoryView setActivePage={setActivePage} />}
-          {activePage === 'saved' && <SavedPlansView setActivePage={setActivePage} />}
-          {activePage === 'profile' && <ProfileView setActivePage={setActivePage} />}
+
+          {activePage === 'shopping' && user && (
+            <FullShoppingListView />
+          )}
+
+          {activePage === 'palette' && user && (
+            <Palette setActivePage={handlePageChange} />
+          )}
+
+          {activePage === 'history' && user && (
+            <PlanHistoryView setActivePage={handlePageChange} />
+          )}
+
+          {activePage === 'saved' && user && (
+            <SavedPlansView setActivePage={handlePageChange} />
+          )}
+
+          {activePage === 'profile' && user && (
+            <ProfileView
+              setActivePage={handlePageChange}
+              user={user}
+            />
+          )}
         </main>
       </div>
     </div>

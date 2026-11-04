@@ -1,5 +1,4 @@
 
-// Generate view: handles dietary preference forms and meal plan generation
 import React, { useState } from 'react';
 import './Generate.css';
 
@@ -11,7 +10,7 @@ export default function Generate({
   currentBudget = 500
 }) {
   const [budget, setBudget] = useState(currentBudget);
-  const [people, setPeople] = useState(2);
+  const [people, setPeople] = useState(1);
   const [selectedTags, setSelectedTags] = useState(['🌿 Vegetarian']);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -26,17 +25,25 @@ export default function Generate({
   ];
 
   const toggleTag = (label) => {
-    if (selectedTags.includes(label)) {
-      setSelectedTags(selectedTags.filter((tag) => tag !== label));
-    } else {
-      setSelectedTags([...selectedTags, label]);
-    }
+    setSelectedTags((previousTags) =>
+      previousTags.includes(label)
+        ? previousTags.filter((tag) => tag !== label)
+        : [...previousTags, label]
+    );
   };
 
   const handleGenerate = async (e) => {
     e.preventDefault();
     setLoading(true);
     setErrorMessage(null);
+
+    const userId = localStorage.getItem('userId');
+
+    if (!userId) {
+      setErrorMessage('Please log in first before generating a meal plan.');
+      setLoading(false);
+      return;
+    }
 
     let dietaryPref = 'None';
     const tagString = selectedTags.join(' ').toLowerCase();
@@ -45,23 +52,25 @@ export default function Generate({
       dietaryPref = 'vegetarian';
     } else if (tagString.includes('halal')) {
       dietaryPref = 'halal';
+    } else if (tagString.includes('high-protein')) {
+      dietaryPref = 'high-protein';
+    } else if (tagString.includes('low-carb')) {
+      dietaryPref = 'low-carb';
     }
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/plans/generate`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            WeeklyBudget: Number(budget),
-            DietaryPreference: dietaryPref,
-            UserID: 1
-          })
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/plans/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          WeeklyBudget: Number(budget),
+          DietaryPreference: dietaryPref,
+          HouseholdSize: Number(people),
+          UserID: userId
+        })
+      });
 
       const result = await response.json();
 
@@ -73,7 +82,7 @@ export default function Generate({
 
       if (onGeneratePlan) {
         onGeneratePlan({
-          budget,
+          budget: Number(budget),
           people,
           selectedTags,
           schedule: result.schedule,
@@ -88,7 +97,7 @@ export default function Generate({
 
       if (err instanceof TypeError) {
         setErrorMessage(
-          'Could not connect to the live backend. Please check the server and its CORS settings.'
+          'Could not connect to the backend. Please check your internet connection or backend CORS settings.'
         );
       } else {
         setErrorMessage(err.message);
@@ -105,7 +114,8 @@ export default function Generate({
           <span className="section-eyebrow">Smart Customiser</span>
           <h2>Build Your 7-Day Plan</h2>
           <p>
-            Set your preferences to optimize meal costs against local SA retail prices.
+            Set your preferences to optimize meal costs against local SA retail
+            prices.
           </p>
         </div>
 
@@ -139,7 +149,8 @@ export default function Generate({
               <button
                 type="button"
                 className="stepper-btn"
-                onClick={() => setPeople(Math.max(1, people - 1))}
+                onClick={() => setPeople((previous) => Math.max(1, previous - 1))}
+                aria-label="Decrease household size"
               >
                 −
               </button>
@@ -151,7 +162,8 @@ export default function Generate({
               <button
                 type="button"
                 className="stepper-btn"
-                onClick={() => setPeople(Math.min(8, people + 1))}
+                onClick={() => setPeople((previous) => Math.min(8, previous + 1))}
+                aria-label="Increase household size"
               >
                 +
               </button>
@@ -171,6 +183,7 @@ export default function Generate({
                     type="button"
                     className={`diet-tag-btn ${isSelected ? 'active' : ''}`}
                     onClick={() => toggleTag(item.label)}
+                    aria-pressed={isSelected}
                   >
                     {item.label}
                   </button>
