@@ -1248,6 +1248,7 @@ export default function App() {
               planData={planData}
               featuredRecipe={featuredRecipe}
               onSwapRecipe={handleSwapRecipe}
+              user={user}
             />
           )}
 

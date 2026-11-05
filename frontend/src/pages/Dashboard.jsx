@@ -1,4 +1,4 @@
-// Dashboard view: aggregates weekly meal schedules, macro nutrition tracking, and grocery budget metrics
+
 import React from 'react';
 import MealCard from '../components/MealCard';
 import ShoppingListItem from '../components/ShoppingListItem';
@@ -7,16 +7,18 @@ import WeekView from '../components/WeekView';
 import BudgetMeter from '../components/BudgetMeter';
 import './Dashboard.css';
 
-export default function Dashboard({ setActivePage, planData = {}, featuredRecipe, onSwapRecipe }) {
+export default function Dashboard({ setActivePage, planData = {}, featuredRecipe, onSwapRecipe, user }) {
   const budget = Number(planData.budget || 500);
   const spent = Number(planData.totalCost ?? planData.spent ?? 418.50);
   const remaining = (budget - spent).toFixed(2);
   const isWithinBudget = spent <= budget;
 
+  const firstName = user?.FullName?.trim().split(' ')[0] || 'there';
+
   return (
     <div className="dashboard-container">
       <header className="dash-header">
-        <h2>Good morning, Thabo 👋</h2>
+        <h2>Hi, {firstName} 👋</h2>
         <p>Week of 19 – 25 May 2026 · Your meal plan is active</p>
       </header>
 
@@ -70,9 +72,9 @@ export default function Dashboard({ setActivePage, planData = {}, featuredRecipe
 
       {/* Main Grid */}
       <section className="dashboard-grid">
-        <WeekView 
-          schedule={planData.schedule} 
-          onRegenerate={() => setActivePage('generate')} 
+        <WeekView
+          schedule={planData.schedule}
+          onRegenerate={() => setActivePage('generate')}
         />
 
         <div className="dash-sidebar">
