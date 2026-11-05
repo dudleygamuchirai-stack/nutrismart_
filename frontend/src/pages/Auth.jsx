@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import './Auth.css';
 
 const API_BASE_URL = 'https://nutrismart-f59i.onrender.com';
@@ -81,6 +81,7 @@ export default function Auth({ mode = 'login', setActivePage, onAuthSuccess }) {
       localStorage.setItem('userId', loggedInUser.UserID);
       localStorage.setItem('userName', loggedInUser.FullName);
       localStorage.setItem('userEmail', loggedInUser.Email);
+      localStorage.setItem('user', JSON.stringify(loggedInUser));
 
       onAuthSuccess(loggedInUser);
     } catch (error) {

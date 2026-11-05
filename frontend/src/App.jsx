@@ -10,20 +10,15 @@ import './App.css';
 
 const INITIAL_PLAN = {
   budget: 500,
-  spent: 418.50,
-  totalCost: 418.50,
-  mealsPlanned: 21,
-  calories: 1840,
-  protein: 115,
-  carbs: 210,
-  fat: 54,
+  spent: null,
+  totalCost: null,
+  mealsPlanned: 0,
+  calories: null,
+  protein: null,
+  carbs: null,
+  fat: null,
   schedule: [],
-  groceries: [
-    { id: 1, name: 'Jungle Oats', quantity: '1 kg box', price: 38.99, checked: true },
-    { id: 2, name: 'Full Cream Milk', quantity: '2 litres', price: 34.00, checked: false },
-    { id: 3, name: 'Chicken Breast Fillets', quantity: '1 kg pack', price: 89.99, checked: false },
-    { id: 4, name: 'Brown Rice', quantity: '2 kg bag', price: 36.50, checked: false }
-  ]
+  groceries: []
 };
 
 const INITIAL_SHOPPING_CATEGORIES = [
@@ -605,18 +600,42 @@ export default function App() {
   };
 
   const handleGeneratePlan = (newPlan) => {
-    setPlanData((prev) => ({
-      ...prev,
-      budget: Number(newPlan.budget) || prev.budget,
-      spent: Number(newPlan.totalCost ?? newPlan.spent ?? prev.spent),
-      totalCost: Number(newPlan.totalCost ?? newPlan.spent ?? prev.spent),
-      schedule:
-        newPlan.schedule && newPlan.schedule.length > 0
-          ? newPlan.schedule
-          : prev.schedule,
-      planId: newPlan.planId || prev.planId
-    }));
-  };
+  const schedule = Array.isArray(newPlan.schedule)
+    ? newPlan.schedule
+    : [];
+
+  const totalCostValue = newPlan.totalCost ?? newPlan.spent;
+
+  const totalCost =
+    totalCostValue === undefined ||
+    totalCostValue === null ||
+    totalCostValue === ''
+      ? null
+      : Number(totalCostValue);
+
+  const mealsPlanned = schedule.reduce((total, day) => {
+    return total + ['breakfast', 'lunch', 'dinner'].filter(
+      (meal) => day[meal]
+    ).length;
+  }, 0);
+
+  setPlanData((prev) => ({
+    ...prev,
+    budget: Number(newPlan.budget) || prev.budget,
+    spent: Number.isFinite(totalCost) ? totalCost : null,
+    totalCost: Number.isFinite(totalCost) ? totalCost : null,
+    mealsPlanned,
+    calories: null,
+    protein: null,
+    carbs: null,
+    fat: null,
+    schedule,
+    groceries: Array.isArray(newPlan.groceries)
+      ? newPlan.groceries
+      : [],
+    planId: newPlan.planId || null
+  }));
+};
 
   const handleSwapRecipe = () => {
     setFeaturedRecipe((prev) => {
@@ -1249,6 +1268,7 @@ export default function App() {
               featuredRecipe={featuredRecipe}
               onSwapRecipe={handleSwapRecipe}
               user={user}
+              onGeneratePlan={() => handlePageChange("generate")}
             />
           )}
 
@@ -1287,3 +1307,6 @@ export default function App() {
     </div>
   );
 }
+
+
+
