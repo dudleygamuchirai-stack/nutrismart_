@@ -1,4 +1,5 @@
-﻿import React, { useState } from 'react';
+﻿
+import React, { useState } from 'react';
 import Navbar from './components/Navbar';
 import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
@@ -33,10 +34,10 @@ const INITIAL_SHOPPING_CATEGORIES = [
     color: '#e0f2fe',
     badgeColor: '#0284c7',
     items: [
-      { id: 'p1', name: 'Chicken Breast (2 pack)', detail: '800g Â· Pick n Pay', price: 62.99, checked: false },
-      { id: 'p2', name: 'Eggs (6 pack)', detail: '6 units Â· Checkers', price: 34.99, checked: true },
-      { id: 'p3', name: 'Tuna in brine (2 tins)', detail: '2 x 170g Â· Pick n Pay', price: 26.00, checked: false },
-      { id: 'p4', name: 'Lentils (dry)', detail: '500g Â· Pick n Pay', price: 18.99, checked: false }
+      { id: 'p1', name: 'Chicken Breast (2 pack)', detail: '800g · Pick n Pay', price: 62.99, checked: false },
+      { id: 'p2', name: 'Eggs (6 pack)', detail: '6 units · Checkers', price: 34.99, checked: true },
+      { id: 'p3', name: 'Tuna in brine (2 tins)', detail: '2 x 170g · Pick n Pay', price: 26.00, checked: false },
+      { id: 'p4', name: 'Lentils (dry)', detail: '500g · Pick n Pay', price: 18.99, checked: false }
     ]
   },
   {
@@ -46,9 +47,9 @@ const INITIAL_SHOPPING_CATEGORIES = [
     color: '#ecfdf5',
     badgeColor: '#059669',
     items: [
-      { id: 'g1', name: 'Jungle Oats (1kg)', detail: '1kg Â· Checkers', price: 38.99, checked: true },
-      { id: 'g2', name: 'White Maize Meal (2kg)', detail: '2 kg Â· Shoprite', price: 22.50, checked: false },
-      { id: 'g3', name: 'Brown Bread', detail: '1 loaf Â· Pick n Pay', price: 17.00, checked: false }
+      { id: 'g1', name: 'Jungle Oats (1kg)', detail: '1kg · Checkers', price: 38.99, checked: true },
+      { id: 'g2', name: 'White Maize Meal (2kg)', detail: '2 kg · Shoprite', price: 22.50, checked: false },
+      { id: 'g3', name: 'Brown Bread', detail: '1 loaf · Pick n Pay', price: 17.00, checked: false }
     ]
   }
 ];
@@ -117,7 +118,6 @@ function Sidebar({ activePage, setActivePage, user }) {
   const handleScrollToPlan = () => {
     if (activePage !== 'dashboard') {
       setActivePage('dashboard');
-
       setTimeout(() => {
         const el = document.querySelector('.dashboard-grid');
         if (el) el.scrollIntoView({ behavior: 'smooth' });
@@ -140,40 +140,20 @@ function Sidebar({ activePage, setActivePage, user }) {
     <aside className="app-sidebar">
       <div className="sidebar-section">
         <span className="sidebar-label">MAIN</span>
-
         <nav className="sidebar-nav">
-          <button
-            type="button"
-            className={`sidebar-link ${activePage === 'dashboard' ? 'active' : ''}`}
-            onClick={() => setActivePage('dashboard')}
-          >
+          <button type="button" className={`sidebar-link ${activePage === 'dashboard' ? 'active' : ''}`} onClick={() => setActivePage('dashboard')}>
             <span className="sidebar-icon"><Icons.Dashboard /></span>
             Dashboard
           </button>
-
-          <button
-            type="button"
-            className={`sidebar-link ${activePage === 'generate' ? 'active' : ''}`}
-            onClick={() => setActivePage('generate')}
-          >
+          <button type="button" className={`sidebar-link ${activePage === 'generate' ? 'active' : ''}`} onClick={() => setActivePage('generate')}>
             <span className="sidebar-icon"><Icons.Generate /></span>
             Generate Plan
           </button>
-
-          <button
-            type="button"
-            className="sidebar-link"
-            onClick={handleScrollToPlan}
-          >
+          <button type="button" className="sidebar-link" onClick={handleScrollToPlan}>
             <span className="sidebar-icon"><Icons.Calendar /></span>
             My Plan
           </button>
-
-          <button
-            type="button"
-            className={`sidebar-link ${activePage === 'shopping' ? 'active' : ''}`}
-            onClick={() => setActivePage('shopping')}
-          >
+          <button type="button" className={`sidebar-link ${activePage === 'shopping' ? 'active' : ''}`} onClick={() => setActivePage('shopping')}>
             <span className="sidebar-icon"><Icons.Cart /></span>
             Shopping List
           </button>
@@ -182,31 +162,16 @@ function Sidebar({ activePage, setActivePage, user }) {
 
       <div className="sidebar-section">
         <span className="sidebar-label">ACCOUNT</span>
-
         <nav className="sidebar-nav">
-          <button
-            type="button"
-            className={`sidebar-link ${activePage === 'history' ? 'active' : ''}`}
-            onClick={() => setActivePage('history')}
-          >
+          <button type="button" className={`sidebar-link ${activePage === 'history' ? 'active' : ''}`} onClick={() => setActivePage('history')}>
             <span className="sidebar-icon"><Icons.Folder /></span>
             Plan History
           </button>
-
-          <button
-            type="button"
-            className={`sidebar-link ${activePage === 'saved' ? 'active' : ''}`}
-            onClick={() => setActivePage('saved')}
-          >
+          <button type="button" className={`sidebar-link ${activePage === 'saved' ? 'active' : ''}`} onClick={() => setActivePage('saved')}>
             <span className="sidebar-icon"><Icons.Heart /></span>
             Saved Plans
           </button>
-
-          <button
-            type="button"
-            className={`sidebar-link ${activePage === 'profile' ? 'active' : ''}`}
-            onClick={() => setActivePage('profile')}
-          >
+          <button type="button" className={`sidebar-link ${activePage === 'profile' ? 'active' : ''}`} onClick={() => setActivePage('profile')}>
             <span className="sidebar-icon"><Icons.User /></span>
             Profile
           </button>
@@ -215,11 +180,8 @@ function Sidebar({ activePage, setActivePage, user }) {
 
       <div className="sidebar-user">
         <div className="sidebar-avatar">{initials}</div>
-
         <div className="sidebar-user-info">
-          <span className="sidebar-user-name">
-            {user?.FullName || 'NutriSmart User'}
-          </span>
+          <span className="sidebar-user-name">{user?.FullName || 'NutriSmart User'}</span>
           <span className="sidebar-user-tier">Free plan</span>
         </div>
       </div>
@@ -233,8 +195,7 @@ function FullShoppingListView() {
   const toggleItem = (catIdx, itemIdx) => {
     setCategories((prev) => {
       const next = JSON.parse(JSON.stringify(prev));
-      next[catIdx].items[itemIdx].checked =
-        !next[catIdx].items[itemIdx].checked;
+      next[catIdx].items[itemIdx].checked = !next[catIdx].items[itemIdx].checked;
       return next;
     });
   };
@@ -244,9 +205,8 @@ function FullShoppingListView() {
       <div className="shopping-header">
         <div>
           <h2>Shopping List</h2>
-          <p>Week of 19 â€“ 25 May 2026 Â· Tap items to mark as collected</p>
+          <p>Week of 19 – 25 May 2026 · Tap items to mark as collected</p>
         </div>
-
         <button className="print-btn" onClick={() => window.print()}>
           <Icons.Printer /> Print / Export
         </button>
@@ -258,24 +218,16 @@ function FullShoppingListView() {
             <div key={cat.category} className="shopping-cat-card">
               <div className="shopping-cat-header">
                 <div className="cat-title">
-                  <span
-                    className="cat-dot"
-                    style={{ backgroundColor: cat.badgeColor }}
-                  ></span>
+                  <span className="cat-dot" style={{ backgroundColor: cat.badgeColor }}></span>
                   <strong>{cat.category}</strong>
                   <span className="cat-count">{cat.count}</span>
                 </div>
-
                 <span className="cat-subtotal">{cat.subtotal}</span>
               </div>
 
               <div className="shopping-cat-items">
                 {cat.items.map((item, itemIdx) => (
-                  <div
-                    key={item.id}
-                    className={`shopping-item-row ${item.checked ? 'checked' : ''}`}
-                    onClick={() => toggleItem(catIdx, itemIdx)}
-                  >
+                  <div key={item.id} className={`shopping-item-row ${item.checked ? 'checked' : ''}`} onClick={() => toggleItem(catIdx, itemIdx)}>
                     <input
                       type="checkbox"
                       checked={item.checked}
@@ -283,15 +235,11 @@ function FullShoppingListView() {
                       onClick={(event) => event.stopPropagation()}
                       className="custom-checkbox"
                     />
-
                     <div className="item-text">
                       <span className="item-name">{item.name}</span>
                       <span className="item-detail">{item.detail}</span>
                     </div>
-
-                    <span className="item-price">
-                      R{item.price.toFixed(2)}
-                    </span>
+                    <span className="item-price">R{item.price.toFixed(2)}</span>
                   </div>
                 ))}
               </div>
@@ -302,44 +250,19 @@ function FullShoppingListView() {
         <div className="shopping-summary-column">
           <div className="cost-summary-card">
             <h3>Cost Summary</h3>
-
             <div className="summary-breakdown-list">
-              <div className="summary-row">
-                <span>Protein items</span>
-                <strong>R142.00</strong>
-              </div>
-
-              <div className="summary-row">
-                <span>Grains & Starches</span>
-                <strong>R68.50</strong>
-              </div>
-
-              <div className="summary-row">
-                <span>Produce</span>
-                <strong>R78.50</strong>
-              </div>
-
-              <div className="summary-row">
-                <span>Dairy</span>
-                <strong>R58.50</strong>
-              </div>
-
-              <div className="summary-row">
-                <span>Condiments</span>
-                <strong>R50.00</strong>
-              </div>
+              <div className="summary-row"><span>Protein items</span><strong>R142.00</strong></div>
+              <div className="summary-row"><span>Grains & Starches</span><strong>R68.50</strong></div>
+              <div className="summary-row"><span>Produce</span><strong>R78.50</strong></div>
+              <div className="summary-row"><span>Dairy</span><strong>R58.50</strong></div>
+              <div className="summary-row"><span>Condiments</span><strong>R50.00</strong></div>
             </div>
-
             <div className="summary-divider"></div>
-
             <div className="summary-total-area">
               <span className="total-label">Total Estimate</span>
               <div className="total-value">R418.50</div>
-              <span className="budget-target">
-                of R500.00 weekly budget
-              </span>
+              <span className="budget-target">of R500.00 weekly budget</span>
             </div>
-
             <div className="summary-savings-pill">
               <strong>R81.50 under budget!</strong>
               <small>That's money back in your pocket</small>
@@ -352,6 +275,82 @@ function FullShoppingListView() {
 }
 
 function PlanHistoryView({ setActivePage }) {
+  const [selectedPlan, setSelectedPlan] = useState(null);
+
+  const days = [
+    'Monday', 'Tuesday', 'Wednesday', 'Thursday',
+    'Friday', 'Saturday', 'Sunday'
+  ];
+
+  const plans = [
+    {
+      id: 1,
+      title: 'Week of 12 – 18 May 2026',
+      store: 'Checkers',
+      spent: 'R412.00',
+      budget: 'R500.00',
+      meals: [
+        ['Jungle Oats and Banana', 'Pap and Lentils', 'Grilled Chicken and Vegetables'],
+        ['Scrambled Eggs and Toast', 'Rice and Beans', 'Chicken Stew and Pap'],
+        ['Maize Meal Porridge', 'Lentil and Rice Bowl', 'Grilled Chicken and Spinach'],
+        ['Boiled Eggs and Toast', 'Pap and Chakalaka', 'Vegetable Stew and Rice'],
+        ['Oats and Milk', 'Chicken and Brown Rice', 'Beans and Vegetables'],
+        ['Peanut Butter Toast', 'Pap and Spinach', 'Chicken Stew and Vegetables'],
+        ['Banana Smoothie', 'Rice and Lentils', 'Eggs and Vegetables']
+      ]
+    },
+    {
+      id: 2,
+      title: 'Week of 5 – 11 May 2026',
+      store: 'Shoprite',
+      spent: 'R395.50',
+      budget: 'R500.00',
+      meals: [
+        ['Oats and Milk', 'Rice and Beans', 'Chicken and Vegetables'],
+        ['Boiled Eggs and Toast', 'Pap and Spinach', 'Lentil Stew and Rice'],
+        ['Banana and Yoghurt', 'Chicken Rice Bowl', 'Vegetable Soup and Bread'],
+        ['Maize Meal Porridge', 'Beans and Chakalaka', 'Grilled Chicken and Rice'],
+        ['Scrambled Eggs and Toast', 'Lentils and Pap', 'Chicken and Vegetables'],
+        ['Oats and Banana', 'Rice and Vegetables', 'Bean Stew and Pap'],
+        ['Peanut Butter Toast', 'Chicken and Rice', 'Eggs and Spinach']
+      ]
+    }
+  ];
+
+  if (selectedPlan) {
+    return (
+      <div className="page-view-container">
+        <header className="page-view-header">
+          <h2>{selectedPlan.title}</h2>
+          <p>Completed weekly meal plan from {selectedPlan.store}</p>
+        </header>
+
+        <div className="account-card" style={{ marginBottom: '20px' }}>
+          <h3>Weekly Spending Summary</h3>
+          <div className="card-metric">Store: <strong>{selectedPlan.store}</strong></div>
+          <div className="card-metric">Total spent: <strong>{selectedPlan.spent}</strong></div>
+          <div className="card-metric">Weekly budget: <strong>{selectedPlan.budget}</strong></div>
+          <div className="card-metric">Meals planned: <strong>21 meals</strong></div>
+        </div>
+
+        <h3 style={{ color: '#0c232c', marginBottom: '15px' }}>Your Weekly Meals</h3>
+
+        {days.map((day, index) => (
+          <div key={day} className="account-card" style={{ marginBottom: '15px' }}>
+            <h3>{day}</h3>
+            <p><strong>🥣 Breakfast:</strong> {selectedPlan.meals[index][0]}</p>
+            <p><strong>🍛 Lunch:</strong> {selectedPlan.meals[index][1]}</p>
+            <p><strong>🍽️ Dinner:</strong> {selectedPlan.meals[index][2]}</p>
+          </div>
+        ))}
+
+        <button type="button" className="back-dash-btn" onClick={() => setSelectedPlan(null)}>
+          ← Back to Plan History
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="page-view-container">
       <header className="page-view-header">
@@ -360,30 +359,32 @@ function PlanHistoryView({ setActivePage }) {
       </header>
 
       <div className="account-cards-grid">
-        <div className="account-card">
-          <div className="account-card-badge">COMPLETED</div>
-          <h3>Week of 12 â€“ 18 May 2026</h3>
-          <p className="card-subtext">21 Meals Planned Â· Checkers</p>
-          <div className="card-metric">
-            Spent: <strong>R412.00</strong> / R500.00
-          </div>
-        </div>
-
-        <div className="account-card">
-          <div className="account-card-badge">COMPLETED</div>
-          <h3>Week of 5 â€“ 11 May 2026</h3>
-          <p className="card-subtext">21 Meals Planned Â· Shoprite</p>
-          <div className="card-metric">
-            Spent: <strong>R395.50</strong> / R500.00
-          </div>
-        </div>
+        {plans.map((plan) => (
+          <button
+            key={plan.id}
+            type="button"
+            className="account-card"
+            onClick={() => setSelectedPlan(plan)}
+            style={{
+              cursor: 'pointer',
+              textAlign: 'left',
+              width: '100%',
+              fontFamily: 'inherit'
+            }}
+          >
+            <div className="account-card-badge">COMPLETED</div>
+            <h3>{plan.title}</h3>
+            <p className="card-subtext">21 Meals Planned · {plan.store}</p>
+            <div className="card-metric">
+              Spent: <strong>{plan.spent}</strong> / {plan.budget}
+            </div>
+            <p style={{ color: '#059669', fontWeight: '600' }}>View Meal Plan →</p>
+          </button>
+        ))}
       </div>
 
-      <button
-        className="back-dash-btn"
-        onClick={() => setActivePage('dashboard')}
-      >
-        â† Back to Dashboard
+      <button type="button" className="back-dash-btn" onClick={() => setActivePage('dashboard')}>
+        ← Back to Dashboard
       </button>
     </div>
   );
@@ -486,9 +487,7 @@ function SavedPlansView({ setActivePage }) {
             <div className="card-metric">
               Estimated: <strong>{plan.cost} / week</strong>
             </div>
-            <p style={{ color: '#059669', fontWeight: '600' }}>
-              View Meal Plan →
-            </p>
+            <p style={{ color: '#059669', fontWeight: '600' }}>View Meal Plan →</p>
           </button>
         ))}
       </div>
@@ -499,6 +498,7 @@ function SavedPlansView({ setActivePage }) {
     </div>
   );
 }
+
 function ProfileView({ setActivePage, user }) {
   const initials = (user?.FullName || 'User')
     .split(' ')
@@ -517,23 +517,19 @@ function ProfileView({ setActivePage, user }) {
 
       <div className="profile-details-card">
         <div className="profile-avatar-large">{initials}</div>
-
         <div className="profile-rows">
           <div className="profile-row">
             <span>Full Name:</span>
             <strong>{user?.FullName || 'Not available'}</strong>
           </div>
-
           <div className="profile-row">
             <span>Email:</span>
             <strong>{user?.Email || 'Not available'}</strong>
           </div>
-
           <div className="profile-row">
             <span>Plan Tier:</span>
             <strong>Free Student Tier</strong>
           </div>
-
           <div className="profile-row">
             <span>Default Weekly Budget:</span>
             <strong>R500.00</strong>
@@ -541,11 +537,8 @@ function ProfileView({ setActivePage, user }) {
         </div>
       </div>
 
-      <button
-        className="back-dash-btn"
-        onClick={() => setActivePage('dashboard')}
-      >
-        â† Back to Dashboard
+      <button className="back-dash-btn" onClick={() => setActivePage('dashboard')}>
+        ← Back to Dashboard
       </button>
     </div>
   );
@@ -587,7 +580,6 @@ export default function App() {
     localStorage.removeItem('userId');
     localStorage.removeItem('userName');
     localStorage.removeItem('userEmail');
-
     setUser(null);
     setPlanData(INITIAL_PLAN);
     setActivePage('landing');
@@ -631,9 +623,7 @@ export default function App() {
       const currentIndex = FEATURED_RECIPES.findIndex(
         (recipe) => recipe.name === prev.name
       );
-
       const nextIndex = (currentIndex + 1) % FEATURED_RECIPES.length;
-
       return FEATURED_RECIPES[nextIndex];
     });
   };
