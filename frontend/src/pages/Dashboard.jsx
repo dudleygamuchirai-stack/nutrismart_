@@ -12,76 +12,41 @@ const API = (
   'https://nutrismart-f59i.onrender.com'
 ).replace(/\/$/, '');
 
-const SAMPLE_NUTRITION = {
-  calories: 1840,
-  protein: 115,
-  carbs: 210,
-  fat: 54
-};
-
-const SAMPLE_GROCERIES = [
-  {
-    id: 'oats',
-    name: 'Jungle Oats',
-    quantity: '1 kg',
-    unit: 'box',
-    price: 38.99,
-    checked: false
-  },
-  {
-    id: 'milk',
-    name: 'Full Cream Milk',
-    quantity: '2',
-    unit: 'litres',
-    price: 34.00,
-    checked: false
-  },
-  {
-    id: 'chicken',
-    name: 'Chicken Breast Fillets',
-    quantity: '1 kg',
-    unit: 'pack',
-    price: 89.99,
-    checked: false
-  },
-  {
-    id: 'rice',
-    name: 'Brown Rice',
-    quantity: '2 kg',
-    unit: 'bag',
-    price: 36.50,
-    checked: false
-  }
-];
-
 function readUser() {
   try {
     const savedUser = JSON.parse(
       localStorage.getItem('user') || 'null'
     );
 
-    if (savedUser) {
-      return {
-        ...savedUser,
-        UserID:
-          savedUser.UserID ||
-          savedUser.user_id ||
-          savedUser.id ||
-          localStorage.getItem('userId')
-      };
-    }
+    const inductionData = JSON.parse(
+      localStorage.getItem('inductionData') || '{}'
+    );
+
+    const id = localStorage.getItem('userId');
+
+    if (!savedUser && !id) return null;
+
+    return {
+      ...inductionData,
+      ...(savedUser || {}),
+      UserID:
+        savedUser?.UserID ||
+        savedUser?.user_id ||
+        savedUser?.id ||
+        id,
+      FullName:
+        savedUser?.FullName ||
+        localStorage.getItem('userName') ||
+        '',
+      Email:
+        savedUser?.Email ||
+        localStorage.getItem('userEmail') ||
+        ''
+    };
   } catch (error) {
     console.error('Could not read saved user:', error);
+    return null;
   }
-
-  const id = localStorage.getItem('userId');
-
-  return id
-    ? {
-        UserID: id,
-        FullName: localStorage.getItem('userName') || ''
-      }
-    : null;
 }
 
 function greeting() {
@@ -89,6 +54,7 @@ function greeting() {
 
   if (hour < 12) return 'Good morning';
   if (hour < 18) return 'Good afternoon';
+
   return 'Good evening';
 }
 
@@ -107,11 +73,65 @@ async function getJson(response) {
 
   if (!response.ok) {
     throw new Error(
-      data.message || 'Could not load your meal plan.'
+      data.message ||
+      data.error ||
+      'Could not load your meal plan.'
     );
   }
 
   return data;
+}
+
+function getNumber(...values) {
+  for (const value of values) {
+    if (
+      value !== undefined &&
+      value !== null &&
+      value !== '' &&
+      Number.isFinite(Number(value))
+    ) {
+      return Number(value);
+    }
+  }
+
+  return null;
+}
+
+function getGroceries(plan) {
+  const possibleLists = [
+    plan?.groceries,
+    plan?.shopping_list,
+    plan?.shoppingList,
+    plan?.shopping_items,
+    plan?.ingredients
+  ];
+
+  const groceries = possibleLists.find(
+    (list) => Array.isArray(list)
+  );
+
+  if (!groceries) return [];
+
+  return groceries.map((item, index) => ({
+    id: item.id || item.ingredient_id || index,
+    name:
+      item.name ||
+      item.ingredient_name ||
+      item.item ||
+      'Unnamed item',
+    quantity:
+      item.quantity ??
+      item.amount ??
+      '—',
+    unit: item.unit || '',
+    price: getNumber(
+      item.price,
+      item.price_zar,
+      item.total_price_zar,
+      item.unit_price_zar
+    ) ?? 0,
+    checked: Boolean(item.checked)
+  }));
 }
 
 export default function Dashboard({
@@ -120,7 +140,8 @@ export default function Dashboard({
   featuredRecipe,
   onSwapRecipe,
   user,
-  onGeneratePlan
+  onGeneratePlan,
+  onPlanLoaded
 }) {
   const savedUser = readUser();
 
@@ -144,6 +165,9 @@ export default function Dashboard({
     plan: null
   });
 
+  const [downloading, setDownloading] = useState('');
+  const [downloadError, setDownloadError] = useState('');
+
   useEffect(() => {
     if (!userId) {
       setState({
@@ -151,6 +175,7 @@ export default function Dashboard({
         error: '',
         plan: null
       });
+
       return;
     }
 
@@ -158,11 +183,11 @@ export default function Dashboard({
 
     async function loadPlan() {
       try {
-        setState({
+        setState((previous) => ({
+          ...previous,
           loading: true,
-          error: '',
-          plan: null
-        });
+          error: ''
+        }));
 
         const listResponse = await fetch(
           `${API}/plans/user/${userId}`
@@ -170,7 +195,10 @@ export default function Dashboard({
 
         const listData = await getJson(listResponse);
 
-        if (!listData.plans || listData.plans.length === 0) {
+        if (
+          !Array.isArray(listData.plans) ||
+          listData.plans.length === 0
+        ) {
           if (!cancelled) {
             setState({
               loading: false,
@@ -190,12 +218,40 @@ export default function Dashboard({
 
         const detailData = await getJson(detailResponse);
 
+        const loadedPlan = detailData.plan || detailData;
+
         if (!cancelled) {
           setState({
             loading: false,
             error: '',
-            plan: detailData
+            plan: loadedPlan
           });
+
+          // Send the loaded plan and groceries to App.jsx.
+          if (typeof onPlanLoaded === 'function') {
+            onPlanLoaded({
+              ...loadedPlan,
+              budget:
+                loadedPlan.weekly_budget_zar ??
+                loadedPlan.WeeklyBudget ??
+                loadedPlan.budget ??
+                planData.budget,
+              totalCost:
+                loadedPlan.total_cost_zar ??
+                loadedPlan.totalCost ??
+                loadedPlan.spent ??
+                null,
+              planId:
+                loadedPlan.plan_id ||
+                loadedPlan.PlanID ||
+                loadedPlan.id ||
+                null,
+              schedule: Array.isArray(loadedPlan.schedule)
+                ? loadedPlan.schedule
+                : [],
+              groceries: getGroceries(loadedPlan)
+            });
+          }
         }
       } catch (error) {
         if (!cancelled) {
@@ -213,7 +269,7 @@ export default function Dashboard({
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [userId, onPlanLoaded]);
 
   const goGenerate = () => {
     if (onGeneratePlan) {
@@ -231,25 +287,75 @@ export default function Dashboard({
 
   const { loading, error, plan } = state;
 
-  const schedule = Array.isArray(plan?.schedule)
-    ? plan.schedule
+  const currentPlan = plan || planData;
+
+  const schedule = Array.isArray(currentPlan?.schedule)
+    ? currentPlan.schedule
     : [];
 
   const hasPlan = schedule.length > 0;
 
-  const budget = plan
-    ? Number(plan.weekly_budget_zar || 0)
-    : 500;
+  const planId =
+    currentPlan?.plan_id ||
+    currentPlan?.PlanID ||
+    currentPlan?.planId ||
+    currentPlan?.id ||
+    null;
 
-  const spent = plan
-    ? Number(plan.total_cost_zar || 0)
-    : null;
+  const downloadPlan = async (format) => {
+    if (!planId) return;
 
-  const hasSpend =
-    spent !== null && Number.isFinite(spent);
+    try {
+      setDownloading(format);
+      setDownloadError('');
 
+      const response = await fetch(
+        `${API}/plans/${planId}/download?format=${format}`
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Could not download the ${format.toUpperCase()} file.`
+        );
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `NutriSmart-Meal-Plan.${format}`;
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      setDownloadError(error.message);
+    } finally {
+      setDownloading('');
+    }
+  };
+
+  const budget =
+    getNumber(
+      currentPlan?.weekly_budget_zar,
+      currentPlan?.WeeklyBudget,
+      currentPlan?.budget,
+      activeUser?.DefaultWeeklyBudget,
+      activeUser?.WeeklyBudget,
+      planData?.budget
+    ) ?? 500;
+
+  const spent = getNumber(
+    currentPlan?.total_cost_zar,
+    currentPlan?.totalCost,
+    currentPlan?.spent
+  );
+
+  const hasSpend = spent !== null;
   const remaining = hasSpend ? budget - spent : null;
-
   const isWithinBudget = hasSpend && spent <= budget;
 
   const mealsPlanned = schedule.reduce((total, day) => {
@@ -264,8 +370,75 @@ export default function Dashboard({
   const firstName =
     activeUser?.FullName?.trim().split(' ')[0] || 'there';
 
+  const calorieTarget = getNumber(
+    activeUser?.DailyCalorieTarget,
+    activeUser?.daily_calorie_target
+  );
+
+  const nutrition = currentPlan?.nutrition || {};
+
+  const avgCaloriesPerPerson = getNumber(
+    currentPlan?.avg_calories_per_person_per_day,
+    currentPlan?.average_calories_per_person_per_day,
+    nutrition?.avg_calories_per_person_per_day,
+    nutrition?.avg_calories_per_person,
+    nutrition?.calories_per_person,
+    nutrition?.avg_calories,
+    currentPlan?.average_calories,
+    currentPlan?.avg_calories,
+    calorieTarget
+  );
+
+  const avgCaloriesHousehold = getNumber(
+    currentPlan?.avg_calories_household_per_day,
+    currentPlan?.average_calories_household_per_day,
+    nutrition?.avg_calories_household_per_day,
+    nutrition?.avg_calories_household,
+    nutrition?.household_calories,
+    currentPlan?.household_calories
+  );
+
+  const calorieTargetPerPerson = getNumber(
+    currentPlan?.calorie_target_per_person,
+    currentPlan?.calorieTargetPerPerson,
+    nutrition?.calorie_target_per_person,
+    calorieTarget
+  );
+
+  const calories = getNumber(
+    nutrition.calories,
+    nutrition.avg_calories,
+    currentPlan?.average_calories,
+    currentPlan?.avg_calories,
+    calorieTarget
+  );
+
+  const protein = getNumber(
+    nutrition.protein,
+    nutrition.avg_protein,
+    currentPlan?.average_protein,
+    currentPlan?.avg_protein
+  );
+
+  const carbs = getNumber(
+    nutrition.carbs,
+    nutrition.avg_carbs,
+    currentPlan?.average_carbs,
+    currentPlan?.avg_carbs
+  );
+
+  const fat = getNumber(
+    nutrition.fat,
+    nutrition.avg_fat,
+    currentPlan?.average_fat,
+    currentPlan?.avg_fat
+  );
+
+  const groceries = getGroceries(currentPlan);
+
   return (
     <div className="dashboard-container">
+
       <header className="dash-header">
         <h2>{greeting()}, {firstName}!</h2>
 
@@ -305,9 +478,11 @@ export default function Dashboard({
         </div>
       )}
 
-      {!loading && !error && activeUser?.UserID && (
+      {!loading && activeUser?.UserID && (
         <>
+
           <section className="kpi-grid">
+
             <div className="kpi-card">
               <span className="kpi-label">
                 Weekly Budget
@@ -372,25 +547,37 @@ export default function Dashboard({
 
             <div className="kpi-card">
               <span className="kpi-label">
-                Avg. Calories/day
+                Daily Calorie Target
               </span>
 
               <div className="kpi-value">
-                {SAMPLE_NUTRITION.calories.toLocaleString()}
+                {calorieTarget !== null
+                  ? calorieTarget.toLocaleString()
+                  : '—'}
               </div>
 
               <span className="kpi-sub">
-                Example nutrition values
+                Personal target from your profile
               </span>
             </div>
+
           </section>
 
           <div style={{ marginBottom: '24px' }}>
             <NutritionSummary
-              calories={SAMPLE_NUTRITION.calories}
-              protein={SAMPLE_NUTRITION.protein}
-              carbs={SAMPLE_NUTRITION.carbs}
-              fat={SAMPLE_NUTRITION.fat}
+              calories={calories ?? '—'}
+              avgCaloriesPerPerson={
+                avgCaloriesPerPerson ?? '—'
+              }
+              avgCaloriesHousehold={
+                avgCaloriesHousehold ?? '—'
+              }
+              calorieTargetPerPerson={
+                calorieTargetPerPerson ?? '—'
+              }
+              protein={protein ?? '—'}
+              carbs={carbs ?? '—'}
+              fat={fat ?? '—'}
             />
           </div>
 
@@ -423,12 +610,14 @@ export default function Dashboard({
           </div>
 
           <section className="dashboard-grid">
+
             <WeekView
               schedule={schedule}
               onRegenerate={goGenerate}
             />
 
             <div className="dash-sidebar">
+
               {hasSpend && (
                 <BudgetMeter
                   budget={budget}
@@ -437,18 +626,25 @@ export default function Dashboard({
               )}
 
               <div className="quick-actions-card">
-                <h4>Checkers Shopping List</h4>
+                <h4>Shopping List</h4>
 
-                {SAMPLE_GROCERIES.map((grocery) => (
-                  <ShoppingListItem
-                    key={grocery.id}
-                    name={grocery.name}
-                    quantity={grocery.quantity}
-                    unit={grocery.unit}
-                    price={grocery.price}
-                    checked={grocery.checked}
-                  />
-                ))}
+                {groceries.length > 0 ? (
+                  groceries.map((grocery) => (
+                    <ShoppingListItem
+                      key={grocery.id}
+                      name={grocery.name}
+                      quantity={grocery.quantity}
+                      unit={grocery.unit}
+                      price={grocery.price}
+                      checked={grocery.checked}
+                    />
+                  ))
+                ) : (
+                  <p>
+                    Your shopping list will appear here
+                    when your meal plan includes groceries.
+                  </p>
+                )}
               </div>
 
               <div className="quick-actions-card">
@@ -458,20 +654,62 @@ export default function Dashboard({
                   className="action-btn primary"
                   onClick={goGenerate}
                 >
-                  ✨ Generate new plan
+                  Generate new plan
                 </button>
 
                 <button
                   className="action-btn"
                   onClick={goPalette}
                 >
-                  🎨 View Design Tokens
+                  View Design Tokens
                 </button>
+
+                {hasPlan && planId && (
+                  <div style={{ marginTop: '16px' }}>
+                    <h4>Download Meal Plan</h4>
+
+                    <button
+                      className="action-btn"
+                      onClick={() => downloadPlan('pdf')}
+                      disabled={downloading !== ''}
+                    >
+                      {downloading === 'pdf'
+                        ? 'Preparing PDF...'
+                        : 'Download PDF'}
+                    </button>
+
+                    <button
+                      className="action-btn"
+                      onClick={() => downloadPlan('csv')}
+                      disabled={downloading !== ''}
+                    >
+                      {downloading === 'csv'
+                        ? 'Preparing CSV...'
+                        : 'Download CSV'}
+                    </button>
+
+                    {downloadError && (
+                      <p
+                        style={{
+                          color: '#D63031',
+                          fontSize: '12px'
+                        }}
+                      >
+                        {downloadError}
+                      </p>
+                    )}
+                  </div>
+                )}
+
               </div>
+
             </div>
           </section>
+
         </>
       )}
+
     </div>
   );
 }
+

@@ -51,3 +51,19 @@
   color: var(--color-text-muted);
   margin-top: 4px;
 }
+
+@media (max-width: 480px) {
+  .budget-tracker-card {
+    padding: 16px;
+  }
+
+  .budget-labels {
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 12px;
+  }
+
+  .budget-total {
+    font-size: 23px;
+  }
+}

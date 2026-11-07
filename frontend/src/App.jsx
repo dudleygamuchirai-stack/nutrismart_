@@ -1,9 +1,10 @@
 ﻿
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Navbar from './components/Navbar';
 import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import Generate from './pages/Generate';
+import Induction from './pages/Induction';
 import Palette from './pages/Palette';
 import Auth from './pages/Auth';
 import './App.css';
@@ -21,90 +22,83 @@ const INITIAL_PLAN = {
   groceries: []
 };
 
-const INITIAL_SHOPPING_CATEGORIES = [
+const FEATURED_RECIPES = [
   {
-    category: 'Protein',
-    count: '4 items',
-    subtotal: 'R142.00',
-    color: '#e0f2fe',
-    badgeColor: '#0284c7',
-    items: [
-      { id: 'p1', name: 'Chicken Breast (2 pack)', detail: '800g · Pick n Pay', price: 62.99, checked: false },
-      { id: 'p2', name: 'Eggs (6 pack)', detail: '6 units · Checkers', price: 34.99, checked: true },
-      { id: 'p3', name: 'Tuna in brine (2 tins)', detail: '2 x 170g · Pick n Pay', price: 26.00, checked: false },
-      { id: 'p4', name: 'Lentils (dry)', detail: '500g · Pick n Pay', price: 18.99, checked: false }
-    ]
+    id: 1,
+    name: 'Grilled Chicken & Steamed Veggies',
+    type: 'DINNER',
+    price: 'R32.50',
+    time: '25 mins',
+    tag: 'High-Protein'
   },
   {
-    category: 'Grains & Starches',
-    count: '4 items',
-    subtotal: 'R68.50',
-    color: '#ecfdf5',
-    badgeColor: '#059669',
-    items: [
-      { id: 'g1', name: 'Jungle Oats (1kg)', detail: '1kg · Checkers', price: 38.99, checked: true },
-      { id: 'g2', name: 'White Maize Meal (2kg)', detail: '2 kg · Shoprite', price: 22.50, checked: false },
-      { id: 'g3', name: 'Brown Bread', detail: '1 loaf · Pick n Pay', price: 17.00, checked: false }
-    ]
+    id: 2,
+    name: 'Pap & Chakalaka with Beans',
+    type: 'DINNER',
+    price: 'R28.00',
+    time: '20 mins',
+    tag: 'Vegetarian'
+  },
+  {
+    id: 3,
+    name: 'Lentil Stew with Brown Rice',
+    type: 'DINNER',
+    price: 'R22.50',
+    time: '35 mins',
+    tag: 'Budget Saver'
   }
-];
-
-const FEATURED_RECIPES = [
-  { id: 1, name: 'Grilled Chicken & Steamed Veggies', type: 'DINNER', price: 'R32.50', time: '25 mins', tag: 'High-Protein' },
-  { id: 2, name: 'Pap & Chakalaka with Beans', type: 'DINNER', price: 'R28.00', time: '20 mins', tag: 'Vegetarian' },
-  { id: 3, name: 'Lentil Stew with Brown Rice', type: 'DINNER', price: 'R22.50', time: '35 mins', tag: 'Budget Saver' }
 ];
 
 const Icons = {
   Dashboard: () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="7" height="9" rx="1"></rect>
-      <rect x="14" y="3" width="7" height="5" rx="1"></rect>
-      <rect x="14" y="12" width="7" height="9" rx="1"></rect>
-      <rect x="3" y="16" width="7" height="5" rx="1"></rect>
+      <rect x="3" y="3" width="7" height="9" rx="1" />
+      <rect x="14" y="3" width="7" height="5" rx="1" />
+      <rect x="14" y="12" width="7" height="9" rx="1" />
+      <rect x="3" y="16" width="7" height="5" rx="1" />
     </svg>
   ),
   Generate: () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
     </svg>
   ),
   Calendar: () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-      <line x1="16" y1="2" x2="16" y2="6"></line>
-      <line x1="8" y1="2" x2="8" y2="6"></line>
-      <line x1="3" y1="10" x2="21" y2="10"></line>
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <line x1="16" y1="2" x2="16" y2="6" />
+      <line x1="8" y1="2" x2="8" y2="6" />
+      <line x1="3" y1="10" x2="21" y2="10" />
     </svg>
   ),
   Cart: () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="9" cy="21" r="1"></circle>
-      <circle cx="20" cy="21" r="1"></circle>
-      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+      <circle cx="9" cy="21" r="1" />
+      <circle cx="20" cy="21" r="1" />
+      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
     </svg>
   ),
   Folder: () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
     </svg>
   ),
   Heart: () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
     </svg>
   ),
   User: () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-      <circle cx="12" cy="7" r="4"></circle>
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
     </svg>
   ),
   Printer: () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="6 9 6 2 18 2 18 9"></polyline>
-      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-      <rect x="6" y="14" width="12" height="8"></rect>
+      <polyline points="6 9 6 2 18 2 18 9" />
+      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+      <rect x="6" y="14" width="12" height="8" />
     </svg>
   )
 };
@@ -113,13 +107,16 @@ function Sidebar({ activePage, setActivePage, user }) {
   const handleScrollToPlan = () => {
     if (activePage !== 'dashboard') {
       setActivePage('dashboard');
-      setTimeout(() => {
-        const el = document.querySelector('.dashboard-grid');
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
+
+      window.setTimeout(() => {
+        document.querySelector('.dashboard-grid')?.scrollIntoView({
+          behavior: 'smooth'
+        });
       }, 100);
     } else {
-      const el = document.querySelector('.dashboard-grid');
-      if (el) el.scrollIntoView({ behavior: 'smooth' });
+      document.querySelector('.dashboard-grid')?.scrollIntoView({
+        behavior: 'smooth'
+      });
     }
   };
 
@@ -135,20 +132,40 @@ function Sidebar({ activePage, setActivePage, user }) {
     <aside className="app-sidebar">
       <div className="sidebar-section">
         <span className="sidebar-label">MAIN</span>
+
         <nav className="sidebar-nav">
-          <button type="button" className={`sidebar-link ${activePage === 'dashboard' ? 'active' : ''}`} onClick={() => setActivePage('dashboard')}>
+          <button
+            type="button"
+            className={`sidebar-link ${activePage === 'dashboard' ? 'active' : ''}`}
+            onClick={() => setActivePage('dashboard')}
+          >
             <span className="sidebar-icon"><Icons.Dashboard /></span>
             Dashboard
           </button>
-          <button type="button" className={`sidebar-link ${activePage === 'generate' ? 'active' : ''}`} onClick={() => setActivePage('generate')}>
+
+          <button
+            type="button"
+            className={`sidebar-link ${activePage === 'generate' ? 'active' : ''}`}
+            onClick={() => setActivePage('generate')}
+          >
             <span className="sidebar-icon"><Icons.Generate /></span>
             Generate Plan
           </button>
-          <button type="button" className="sidebar-link" onClick={handleScrollToPlan}>
+
+          <button
+            type="button"
+            className="sidebar-link"
+            onClick={handleScrollToPlan}
+          >
             <span className="sidebar-icon"><Icons.Calendar /></span>
             My Plan
           </button>
-          <button type="button" className={`sidebar-link ${activePage === 'shopping' ? 'active' : ''}`} onClick={() => setActivePage('shopping')}>
+
+          <button
+            type="button"
+            className={`sidebar-link ${activePage === 'shopping' ? 'active' : ''}`}
+            onClick={() => setActivePage('shopping')}
+          >
             <span className="sidebar-icon"><Icons.Cart /></span>
             Shopping List
           </button>
@@ -157,16 +174,31 @@ function Sidebar({ activePage, setActivePage, user }) {
 
       <div className="sidebar-section">
         <span className="sidebar-label">ACCOUNT</span>
+
         <nav className="sidebar-nav">
-          <button type="button" className={`sidebar-link ${activePage === 'history' ? 'active' : ''}`} onClick={() => setActivePage('history')}>
+          <button
+            type="button"
+            className={`sidebar-link ${activePage === 'history' ? 'active' : ''}`}
+            onClick={() => setActivePage('history')}
+          >
             <span className="sidebar-icon"><Icons.Folder /></span>
             Plan History
           </button>
-          <button type="button" className={`sidebar-link ${activePage === 'saved' ? 'active' : ''}`} onClick={() => setActivePage('saved')}>
+
+          <button
+            type="button"
+            className={`sidebar-link ${activePage === 'saved' ? 'active' : ''}`}
+            onClick={() => setActivePage('saved')}
+          >
             <span className="sidebar-icon"><Icons.Heart /></span>
             Saved Plans
           </button>
-          <button type="button" className={`sidebar-link ${activePage === 'profile' ? 'active' : ''}`} onClick={() => setActivePage('profile')}>
+
+          <button
+            type="button"
+            className={`sidebar-link ${activePage === 'profile' ? 'active' : ''}`}
+            onClick={() => setActivePage('profile')}
+          >
             <span className="sidebar-icon"><Icons.User /></span>
             Profile
           </button>
@@ -175,8 +207,11 @@ function Sidebar({ activePage, setActivePage, user }) {
 
       <div className="sidebar-user">
         <div className="sidebar-avatar">{initials}</div>
+
         <div className="sidebar-user-info">
-          <span className="sidebar-user-name">{user?.FullName || 'NutriSmart User'}</span>
+          <span className="sidebar-user-name">
+            {user?.FullName || 'NutriSmart User'}
+          </span>
           <span className="sidebar-user-tier">Free plan</span>
         </div>
       </div>
@@ -184,15 +219,93 @@ function Sidebar({ activePage, setActivePage, user }) {
   );
 }
 
-function FullShoppingListView() {
-  const [categories, setCategories] = useState(INITIAL_SHOPPING_CATEGORIES);
+/* Shopping List now uses the groceries from the generated plan. */
+function FullShoppingListView({ groceries = [], budget = 500 }) {
+  const [checkedItems, setCheckedItems] = useState({});
 
-  const toggleItem = (catIdx, itemIdx) => {
-    setCategories((prev) => {
-      const next = JSON.parse(JSON.stringify(prev));
-      next[catIdx].items[itemIdx].checked = !next[catIdx].items[itemIdx].checked;
-      return next;
+  useEffect(() => {
+    const savedChecks = {};
+
+    groceries.forEach((item, index) => {
+      const id = item.id || item.ingredient_id || index;
+      savedChecks[id] = Boolean(item.checked);
     });
+
+    setCheckedItems(savedChecks);
+  }, [groceries]);
+
+  const getPrice = (item) => {
+    const value =
+      item.price ??
+      item.price_zar ??
+      item.total_price_zar ??
+      item.unit_price_zar ??
+      0;
+
+    const price = Number(value);
+    return Number.isFinite(price) ? price : 0;
+  };
+
+  const getName = (item) =>
+    item.name ||
+    item.ingredient_name ||
+    item.item ||
+    'Unnamed item';
+
+  const getQuantity = (item) =>
+    item.quantity ?? item.amount ?? '';
+
+  const getUnit = (item) => item.unit || '';
+
+  const getCategory = (item) =>
+    item.category ||
+    item.category_name ||
+    'Other';
+
+  const groupedItems = groceries.reduce((groups, item, index) => {
+    const category = getCategory(item);
+
+    if (!groups[category]) {
+      groups[category] = [];
+    }
+
+    groups[category].push({
+      ...item,
+      id: item.id || item.ingredient_id || index
+    });
+
+    return groups;
+  }, {});
+
+  const categories = Object.entries(groupedItems).map(
+    ([category, items]) => ({
+      category,
+      items,
+      subtotal: items.reduce(
+        (total, item) => total + getPrice(item),
+        0
+      )
+    })
+  );
+
+  const total = groceries.reduce(
+    (sum, item) => sum + getPrice(item),
+    0
+  );
+
+  const safeBudget = Number(budget) || 0;
+  const remaining = safeBudget - total;
+
+  const collectedCount = groceries.filter((item, index) => {
+    const id = item.id || item.ingredient_id || index;
+    return Boolean(checkedItems[id]);
+  }).length;
+
+  const toggleItem = (id) => {
+    setCheckedItems((previous) => ({
+      ...previous,
+      [id]: !previous[id]
+    }));
   };
 
   return (
@@ -200,148 +313,389 @@ function FullShoppingListView() {
       <div className="shopping-header">
         <div>
           <h2>Shopping List</h2>
-          <p>Week of 19 – 25 May 2026 · Tap items to mark as collected</p>
+          <p>
+            Your generated meal plan groceries Â· Tap items
+            to mark them as collected
+          </p>
         </div>
-        <button className="print-btn" onClick={() => window.print()}>
+
+        <button
+          type="button"
+          className="print-btn"
+          onClick={() => window.print()}
+        >
           <Icons.Printer /> Print / Export
         </button>
       </div>
 
-      <div className="shopping-content-grid">
-        <div className="shopping-categories-column">
-          {categories.map((cat, catIdx) => (
-            <div key={cat.category} className="shopping-cat-card">
-              <div className="shopping-cat-header">
-                <div className="cat-title">
-                  <span className="cat-dot" style={{ backgroundColor: cat.badgeColor }}></span>
-                  <strong>{cat.category}</strong>
-                  <span className="cat-count">{cat.count}</span>
-                </div>
-                <span className="cat-subtotal">{cat.subtotal}</span>
-              </div>
+      {groceries.length > 0 ? (
+        <>
+          <p className="shopping-progress">
+            {collectedCount} of {groceries.length} items collected
+          </p>
 
-              <div className="shopping-cat-items">
-                {cat.items.map((item, itemIdx) => (
-                  <div key={item.id} className={`shopping-item-row ${item.checked ? 'checked' : ''}`} onClick={() => toggleItem(catIdx, itemIdx)}>
-                    <input
-                      type="checkbox"
-                      checked={item.checked}
-                      onChange={() => toggleItem(catIdx, itemIdx)}
-                      onClick={(event) => event.stopPropagation()}
-                      className="custom-checkbox"
-                    />
-                    <div className="item-text">
-                      <span className="item-name">{item.name}</span>
-                      <span className="item-detail">{item.detail}</span>
+          <div className="shopping-content-grid">
+            <div className="shopping-categories-column">
+              {categories.map((cat) => (
+                <div
+                  key={cat.category}
+                  className="shopping-cat-card"
+                >
+                  <div className="shopping-cat-header">
+                    <div className="cat-title">
+                      <span className="cat-dot" />
+                      <strong>{cat.category}</strong>
+                      <span className="cat-count">
+                        {cat.items.length} items
+                      </span>
                     </div>
-                    <span className="item-price">R{item.price.toFixed(2)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
 
-        <div className="shopping-summary-column">
-          <div className="cost-summary-card">
-            <h3>Cost Summary</h3>
-            <div className="summary-breakdown-list">
-              <div className="summary-row"><span>Protein items</span><strong>R142.00</strong></div>
-              <div className="summary-row"><span>Grains & Starches</span><strong>R68.50</strong></div>
-              <div className="summary-row"><span>Produce</span><strong>R78.50</strong></div>
-              <div className="summary-row"><span>Dairy</span><strong>R58.50</strong></div>
-              <div className="summary-row"><span>Condiments</span><strong>R50.00</strong></div>
+                    <span className="cat-subtotal">
+                      R{cat.subtotal.toFixed(2)}
+                    </span>
+                  </div>
+
+                  <div className="shopping-cat-items">
+                    {cat.items.map((item) => (
+                      <div
+                        key={item.id}
+                        className={`shopping-item-row ${
+                          checkedItems[item.id] ? 'checked' : ''
+                        }`}
+                        onClick={() => toggleItem(item.id)}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={Boolean(checkedItems[item.id])}
+                          onChange={() => toggleItem(item.id)}
+                          onClick={(event) => event.stopPropagation()}
+                          className="custom-checkbox"
+                          aria-label={`Mark ${getName(item)} as collected`}
+                        />
+
+                        <div className="item-text">
+                          <span className="item-name">
+                            {getName(item)}
+                          </span>
+
+                          <span className="item-detail">
+                            {getQuantity(item)} {getUnit(item)}
+                          </span>
+                        </div>
+
+                        <span className="item-price">
+                          R{getPrice(item).toFixed(2)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="summary-divider"></div>
-            <div className="summary-total-area">
-              <span className="total-label">Total Estimate</span>
-              <div className="total-value">R418.50</div>
-              <span className="budget-target">of R500.00 weekly budget</span>
-            </div>
-            <div className="summary-savings-pill">
-              <strong>R81.50 under budget!</strong>
-              <small>That's money back in your pocket</small>
+
+            <div className="shopping-summary-column">
+              <div className="cost-summary-card">
+                <h3>Cost Summary</h3>
+
+                <div className="summary-breakdown-list">
+                  {categories.map((cat) => (
+                    <div
+                      className="summary-row"
+                      key={cat.category}
+                    >
+                      <span>{cat.category}</span>
+                      <strong>
+                        R{cat.subtotal.toFixed(2)}
+                      </strong>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="summary-divider" />
+
+                <div className="summary-total-area">
+                  <span className="total-label">Total Estimate</span>
+
+                  <div className="total-value">
+                    R{total.toFixed(2)}
+                  </div>
+
+                  <span className="budget-target">
+                    of R{safeBudget.toFixed(2)} weekly budget
+                  </span>
+                </div>
+
+                <div className="summary-savings-pill">
+                  <strong>
+                    {remaining >= 0
+                      ? `R${remaining.toFixed(2)} under budget`
+                      : `R${Math.abs(remaining).toFixed(2)} over budget`}
+                  </strong>
+
+                  <small>
+                    {remaining >= 0
+                      ? 'You are within your weekly budget.'
+                      : 'Your shopping list exceeds your weekly budget.'}
+                  </small>
+                </div>
+              </div>
             </div>
           </div>
+        </>
+      ) : (
+        <div className="cost-summary-card">
+          <h3>Your shopping list is empty</h3>
+          <p>
+            Generate a meal plan with groceries to see your
+            shopping items, quantities and estimated costs here.
+          </p>
         </div>
-      </div>
+      )}
     </div>
   );
 }
 
+function getPlanSchedule(plan) {
+  const schedule = plan?.schedule || plan?.weekly_schedule || plan?.days || [];
+
+  if (Array.isArray(schedule)) return schedule;
+
+  if (schedule && Array.isArray(schedule.days)) return schedule.days;
+
+  if (schedule && typeof schedule === 'object') {
+    return Object.entries(schedule).map(([day, meals]) => ({
+      day,
+      ...(meals || {})
+    }));
+  }
+
+  return [];
+}
+
+function getPlanMealName(value) {
+  if (!value) return 'Not available';
+  if (typeof value === 'string') return value;
+
+  return (
+    value.name ||
+    value.meal_name ||
+    value.title ||
+    value.recipe_name ||
+    'Not available'
+  );
+}
+
+function PlanViewSchedule({ plan }) {
+  const schedule = getPlanSchedule(plan);
+
+  if (!schedule.length) {
+    return (
+      <div className="account-card">
+        <p>This plan does not contain a meal schedule.</p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {schedule.map((day, index) => {
+        const meals = day.meals || day;
+        const dayName = day.day || day.day_name || day.name || `Day ${index + 1}`;
+
+        return (
+          <div
+            key={`${dayName}-${index}`}
+            className="account-card"
+            style={{ marginBottom: '15px' }}
+          >
+            <h3>{dayName}</h3>
+            <p><strong>🥣 Breakfast:</strong> {getPlanMealName(meals.breakfast)}</p>
+            <p><strong>🍛 Lunch:</strong> {getPlanMealName(meals.lunch)}</p>
+            <p><strong>🍽️ Dinner:</strong> {getPlanMealName(meals.dinner)}</p>
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
 function PlanHistoryView({ setActivePage }) {
+  const [plans, setPlans] = useState([]);
   const [selectedPlan, setSelectedPlan] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [savedMessage, setSavedMessage] = useState('');
 
-  const days = [
-    'Monday', 'Tuesday', 'Wednesday', 'Thursday',
-    'Friday', 'Saturday', 'Sunday'
-  ];
+  const userId = localStorage.getItem('userId');
+  const apiBase = (
+    import.meta.env.VITE_API_URL ||
+    'https://nutrismart-f59i.onrender.com'
+  ).replace(/\/$/, '');
 
-  const plans = [
-    {
-      id: 1,
-      title: 'Week of 12 – 18 May 2026',
-      store: 'Checkers',
-      spent: 'R412.00',
-      budget: 'R500.00',
-      meals: [
-        ['Jungle Oats and Banana', 'Pap and Lentils', 'Grilled Chicken and Vegetables'],
-        ['Scrambled Eggs and Toast', 'Rice and Beans', 'Chicken Stew and Pap'],
-        ['Maize Meal Porridge', 'Lentil and Rice Bowl', 'Grilled Chicken and Spinach'],
-        ['Boiled Eggs and Toast', 'Pap and Chakalaka', 'Vegetable Stew and Rice'],
-        ['Oats and Milk', 'Chicken and Brown Rice', 'Beans and Vegetables'],
-        ['Peanut Butter Toast', 'Pap and Spinach', 'Chicken Stew and Vegetables'],
-        ['Banana Smoothie', 'Rice and Lentils', 'Eggs and Vegetables']
-      ]
-    },
-    {
-      id: 2,
-      title: 'Week of 5 – 11 May 2026',
-      store: 'Shoprite',
-      spent: 'R395.50',
-      budget: 'R500.00',
-      meals: [
-        ['Oats and Milk', 'Rice and Beans', 'Chicken and Vegetables'],
-        ['Boiled Eggs and Toast', 'Pap and Spinach', 'Lentil Stew and Rice'],
-        ['Banana and Yoghurt', 'Chicken Rice Bowl', 'Vegetable Soup and Bread'],
-        ['Maize Meal Porridge', 'Beans and Chakalaka', 'Grilled Chicken and Rice'],
-        ['Scrambled Eggs and Toast', 'Lentils and Pap', 'Chicken and Vegetables'],
-        ['Oats and Banana', 'Rice and Vegetables', 'Bean Stew and Pap'],
-        ['Peanut Butter Toast', 'Chicken and Rice', 'Eggs and Spinach']
-      ]
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadHistory() {
+      if (!userId) {
+        setErrorMessage('Please log in to view your plan history.');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `${apiBase}/plans/user/${encodeURIComponent(userId)}`
+        );
+
+        if (!response.ok) {
+          throw new Error('Could not load your plan history.');
+        }
+
+        const data = await response.json();
+
+        const history = Array.isArray(data)
+          ? data
+          : data.plans || data.history || (data.plan ? [data.plan] : []);
+
+        if (!cancelled) {
+          setPlans(history);
+          setErrorMessage('');
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setErrorMessage(error.message || 'Unable to load plan history.');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     }
-  ];
+
+    loadHistory();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, apiBase]);
+
+  async function openPlan(plan) {
+    setSelectedPlan(plan);
+    setSavedMessage('');
+
+    const planId = plan.plan_id || plan.id;
+
+    if (!planId || getPlanSchedule(plan).length) return;
+
+    try {
+      const response = await fetch(
+        `${apiBase}/plans/${encodeURIComponent(planId)}`
+      );
+
+      if (!response.ok) return;
+
+      const data = await response.json();
+      setSelectedPlan(data.plan || data);
+    } catch (error) {
+      console.error('Could not load plan details:', error);
+    }
+  }
+
+  function savePlan(plan) {
+    try {
+      const existing = JSON.parse(
+        localStorage.getItem('nutrismartSavedPlans') || '[]'
+      );
+
+      const planId = plan.plan_id || plan.id || `saved-${Date.now()}`;
+
+      const alreadySaved = existing.some(
+        (item) => String(item.plan_id || item.id) === String(planId)
+      );
+
+      if (alreadySaved) {
+        setSavedMessage('This plan is already saved.');
+        return;
+      }
+
+      const updated = [
+        ...existing,
+        { ...plan, id: planId, savedAt: new Date().toISOString() }
+      ];
+
+      localStorage.setItem('nutrismartSavedPlans', JSON.stringify(updated));
+      setSavedMessage('Plan saved successfully!');
+    } catch (error) {
+      setSavedMessage('Unable to save this plan on this browser.');
+    }
+  }
+
+  const formatMoney = (value) => {
+    const amount = Number(value);
+    return Number.isFinite(amount) ? `R${amount.toFixed(2)}` : 'Not available';
+  };
 
   if (selectedPlan) {
+    const title =
+      selectedPlan.title ||
+      selectedPlan.name ||
+      (selectedPlan.week_start
+        ? `Week starting ${selectedPlan.week_start}`
+        : 'Meal Plan');
+
+    const spent =
+      selectedPlan.total_cost_zar ??
+      selectedPlan.totalCost ??
+      selectedPlan.spent;
+
+    const budget =
+      selectedPlan.weekly_budget_zar ??
+      selectedPlan.budget;
+
     return (
       <div className="page-view-container">
         <header className="page-view-header">
-          <h2>{selectedPlan.title}</h2>
-          <p>Completed weekly meal plan from {selectedPlan.store}</p>
+          <h2>{title}</h2>
+          <p>View the details of your previous meal plan.</p>
         </header>
 
         <div className="account-card" style={{ marginBottom: '20px' }}>
           <h3>Weekly Spending Summary</h3>
-          <div className="card-metric">Store: <strong>{selectedPlan.store}</strong></div>
-          <div className="card-metric">Total spent: <strong>{selectedPlan.spent}</strong></div>
-          <div className="card-metric">Weekly budget: <strong>{selectedPlan.budget}</strong></div>
-          <div className="card-metric">Meals planned: <strong>21 meals</strong></div>
+          <div className="card-metric">
+            Total spent: <strong>{formatMoney(spent)}</strong>
+          </div>
+          <div className="card-metric">
+            Weekly budget: <strong>{formatMoney(budget)}</strong>
+          </div>
         </div>
 
-        <h3 style={{ color: '#0c232c', marginBottom: '15px' }}>Your Weekly Meals</h3>
+        <h3 style={{ color: '#0c232c', marginBottom: '15px' }}>
+          Your Weekly Meals
+        </h3>
 
-        {days.map((day, index) => (
-          <div key={day} className="account-card" style={{ marginBottom: '15px' }}>
-            <h3>{day}</h3>
-            <p><strong>🥣 Breakfast:</strong> {selectedPlan.meals[index][0]}</p>
-            <p><strong>🍛 Lunch:</strong> {selectedPlan.meals[index][1]}</p>
-            <p><strong>🍽️ Dinner:</strong> {selectedPlan.meals[index][2]}</p>
-          </div>
-        ))}
+        <PlanViewSchedule plan={selectedPlan} />
 
-        <button type="button" className="back-dash-btn" onClick={() => setSelectedPlan(null)}>
-          ← Back to Plan History
-        </button>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            className="back-dash-btn"
+            onClick={() => savePlan(selectedPlan)}
+          >
+            ♡ Save this plan
+          </button>
+
+          <button
+            type="button"
+            className="back-dash-btn"
+            onClick={() => setSelectedPlan(null)}
+          >
+            ← Back to Plan History
+          </button>
+        </div>
+
+        {savedMessage && (
+          <p role="status" style={{ marginTop: '12px' }}>
+            {savedMessage}
+          </p>
+        )}
       </div>
     );
   }
@@ -350,107 +704,147 @@ function PlanHistoryView({ setActivePage }) {
     <div className="page-view-container">
       <header className="page-view-header">
         <h2>Plan History</h2>
-        <p>Review your previous weekly grocery plans and expenditure</p>
+        <p>Review your previous weekly meal plans and expenditure.</p>
       </header>
 
-      <div className="account-cards-grid">
-        {plans.map((plan) => (
-          <button
-            key={plan.id}
-            type="button"
-            className="account-card"
-            onClick={() => setSelectedPlan(plan)}
-            style={{
-              cursor: 'pointer',
-              textAlign: 'left',
-              width: '100%',
-              fontFamily: 'inherit'
-            }}
-          >
-            <div className="account-card-badge">COMPLETED</div>
-            <h3>{plan.title}</h3>
-            <p className="card-subtext">21 Meals Planned · {plan.store}</p>
-            <div className="card-metric">
-              Spent: <strong>{plan.spent}</strong> / {plan.budget}
-            </div>
-            <p style={{ color: '#059669', fontWeight: '600' }}>View Meal Plan →</p>
-          </button>
-        ))}
-      </div>
+      {loading && <p>Loading your previous plans...</p>}
 
-      <button type="button" className="back-dash-btn" onClick={() => setActivePage('dashboard')}>
-        ← Back to Dashboard
-      </button>
+      {!loading && errorMessage && (
+        <div className="account-card">
+          <p>{errorMessage}</p>
+        </div>
+      )}
+
+      {!loading && !errorMessage && plans.length === 0 && (
+        <div className="account-card">
+          <h3>No previous plans yet</h3>
+          <p>Your generated meal plans will appear here.</p>
+          <button
+            type="button"
+            className="back-dash-btn"
+            onClick={() => setActivePage('generate')}
+          >
+            Generate a Meal Plan
+          </button>
+        </div>
+      )}
+
+      <div className="account-cards-grid">
+        {plans.map((plan, index) => {
+          const planId = plan.plan_id || plan.id || index;
+          const title =
+            plan.title ||
+            plan.name ||
+            (plan.week_start
+              ? `Week starting ${plan.week_start}`
+              : `Meal Plan ${index + 1}`);
+
+          const cost =
+            plan.total_cost_zar ??
+            plan.totalCost ??
+            plan.spent;
+
+          return (
+            <button
+              key={planId}
+              type="button"
+              className="account-card"
+              onClick={() => openPlan(plan)}
+              style={{
+                cursor: 'pointer',
+                textAlign: 'left',
+                width: '100%',
+                fontFamily: 'inherit'
+              }}
+            >
+              <h3>{title}</h3>
+              <div className="card-metric">
+                Total spent: <strong>{formatMoney(cost)}</strong>
+              </div>
+              <p className="card-subtext">Select to view this meal plan.</p>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
 
 function SavedPlansView({ setActivePage }) {
+  const [plans, setPlans] = useState(() => {
+    try {
+      return JSON.parse(
+        localStorage.getItem('nutrismartSavedPlans') || '[]'
+      );
+    } catch {
+      return [];
+    }
+  });
+
   const [selectedPlan, setSelectedPlan] = useState(null);
 
-  const plans = [
-    {
-      id: 'budget',
-      title: 'Budget Student Saver',
-      description: 'Affordable meals featuring pap, beans and oats.',
-      cost: 'R380.00',
-      meals: [
-        ['Jungle Oats', 'Pap and beans', 'Chicken stew and vegetables'],
-        ['Toast and eggs', 'Rice and chakalaka', 'Bean stew and pap'],
-        ['Oats and banana', 'Pap and spinach', 'Chicken and rice'],
-        ['Boiled eggs and toast', 'Beans and rice', 'Vegetable stew and pap'],
-        ['Jungle Oats', 'Chicken and vegetables', 'Pap and beans'],
-        ['Peanut butter toast', 'Rice and beans', 'Chicken stew'],
-        ['Oats and banana', 'Pap and vegetables', 'Eggs and rice']
-      ]
-    },
-    {
-      id: 'protein',
-      title: 'High Protein Lean Plan',
-      description: 'Balanced meals featuring grilled chicken and eggs.',
-      cost: 'R450.00',
-      meals: [
-        ['Boiled eggs and oats', 'Grilled chicken and rice', 'Chicken salad'],
-        ['Eggs and wholewheat toast', 'Chicken and vegetables', 'Tuna salad'],
-        ['Greek yoghurt and oats', 'Grilled chicken and sweet potato', 'Egg omelette'],
-        ['Scrambled eggs', 'Chicken rice bowl', 'Grilled fish and vegetables'],
-        ['Oats and boiled eggs', 'Chicken salad', 'Eggs and sweet potato'],
-        ['Greek yoghurt and banana', 'Grilled chicken and rice', 'Tuna and vegetables'],
-        ['Egg omelette and toast', 'Chicken and vegetables', 'Grilled fish and salad']
-      ]
-    }
-  ];
+  function removePlan(planToRemove) {
+    const planId = planToRemove.plan_id || planToRemove.id;
 
-  const days = [
-    'Monday', 'Tuesday', 'Wednesday', 'Thursday',
-    'Friday', 'Saturday', 'Sunday'
-  ];
+    const updated = plans.filter(
+      (plan) =>
+        String(plan.plan_id || plan.id) !== String(planId)
+    );
+
+    setPlans(updated);
+    localStorage.setItem('nutrismartSavedPlans', JSON.stringify(updated));
+    setSelectedPlan(null);
+  }
+
+  const formatMoney = (value) => {
+    const amount = Number(value);
+    return Number.isFinite(amount) ? `R${amount.toFixed(2)}` : 'Not available';
+  };
 
   if (selectedPlan) {
+    const title =
+      selectedPlan.title ||
+      selectedPlan.name ||
+      'Saved Meal Plan';
+
+    const cost =
+      selectedPlan.total_cost_zar ??
+      selectedPlan.totalCost ??
+      selectedPlan.spent;
+
     return (
       <div className="page-view-container">
         <header className="page-view-header">
-          <h2>{selectedPlan.title}</h2>
-          <p>{selectedPlan.description}</p>
+          <h2>{title}</h2>
+          <p>Your saved weekly meal plan.</p>
         </header>
 
         <div className="account-card" style={{ marginBottom: '20px' }}>
           <h3>Weekly Meal Plan</h3>
-          <p>Estimated weekly cost: <strong>{selectedPlan.cost}</strong></p>
+          <p>
+            Estimated weekly cost: <strong>{formatMoney(cost)}</strong>
+          </p>
         </div>
 
-        {days.map((day, index) => (
-          <div key={day} className="account-card" style={{ marginBottom: '15px' }}>
-            <h3>{day}</h3>
-            <p><strong>🥣 Breakfast:</strong> {selectedPlan.meals[index][0]}</p>
-            <p><strong>🍛 Lunch:</strong> {selectedPlan.meals[index][1]}</p>
-            <p><strong>🍽️ Dinner:</strong> {selectedPlan.meals[index][2]}</p>
-          </div>
-        ))}
+        <PlanViewSchedule plan={selectedPlan} />
 
-        <button className="back-dash-btn" onClick={() => setSelectedPlan(null)}>
-          ← Back to Saved Plans
-        </button>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            className="back-dash-btn"
+            onClick={() => removePlan(selectedPlan)}
+          >
+            Remove Saved Plan
+          </button>
+
+          <button
+            type="button"
+            className="back-dash-btn"
+            onClick={() => setSelectedPlan(null)}
+          >
+            ← Back to Saved Plans
+          </button>
+        </div>
       </div>
     );
   }
@@ -459,37 +853,61 @@ function SavedPlansView({ setActivePage }) {
     <div className="page-view-container">
       <header className="page-view-header">
         <h2>Saved Plans</h2>
-        <p>Your pinned meal routines and favorite weekly recipes</p>
+        <p>Your pinned meal plans and favourite weekly routines.</p>
       </header>
 
-      <div className="account-cards-grid">
-        {plans.map((plan) => (
+      {plans.length === 0 ? (
+        <div className="account-card">
+          <h3>No saved plans yet</h3>
+          <p>Open a plan in Plan History and select "Save this plan".</p>
           <button
-            key={plan.id}
             type="button"
-            className="account-card"
-            onClick={() => setSelectedPlan(plan)}
-            style={{
-              cursor: 'pointer',
-              textAlign: 'left',
-              width: '100%',
-              fontFamily: 'inherit'
-            }}
+            className="back-dash-btn"
+            onClick={() => setActivePage('history')}
           >
-            <div className="account-card-badge active-tag">FAVORITE</div>
-            <h3>{plan.title}</h3>
-            <p className="card-subtext">{plan.description}</p>
-            <div className="card-metric">
-              Estimated: <strong>{plan.cost} / week</strong>
-            </div>
-            <p style={{ color: '#059669', fontWeight: '600' }}>View Meal Plan →</p>
+            View Plan History
           </button>
-        ))}
-      </div>
+        </div>
+      ) : (
+        <div className="account-cards-grid">
+          {plans.map((plan, index) => {
+            const planId = plan.plan_id || plan.id || index;
+            const title =
+              plan.title ||
+              plan.name ||
+              `Saved Plan ${index + 1}`;
 
-      <button className="back-dash-btn" onClick={() => setActivePage('dashboard')}>
-        ← Back to Dashboard
-      </button>
+            const cost =
+              plan.total_cost_zar ??
+              plan.totalCost ??
+              plan.spent;
+
+            return (
+              <button
+                key={planId}
+                type="button"
+                className="account-card"
+                onClick={() => setSelectedPlan(plan)}
+                style={{
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  width: '100%',
+                  fontFamily: 'inherit'
+                }}
+              >
+                <div className="account-card-badge active-tag">
+                  FAVORITE
+                </div>
+                <h3>{title}</h3>
+                <div className="card-metric">
+                  Estimated: <strong>{formatMoney(cost)} / week</strong>
+                </div>
+                <p className="card-subtext">Select to view this saved plan.</p>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -503,28 +921,47 @@ function ProfileView({ setActivePage, user }) {
     .join('')
     .toUpperCase();
 
+  const profileDetails = [
+    ['Full Name', user?.FullName],
+    ['Email', user?.Email],
+    ['Age', user?.Age ? `${user.Age} years` : null],
+    ['Sex', user?.Sex],
+    ['Height', user?.HeightCm ? `${user.HeightCm} cm` : null],
+    ['Weight', user?.WeightKg ? `${user.WeightKg} kg` : null],
+    ['Activity Level', user?.ActivityLevel],
+    ['Fitness Goal', user?.Goal],
+    ['Household Size', user?.HouseholdSize],
+    [
+      'Daily Calorie Target',
+      user?.DailyCalorieTarget
+        ? `${user.DailyCalorieTarget} kcal`
+        : null
+    ]
+  ];
+
   return (
     <div className="page-view-container">
       <header className="page-view-header">
         <h2>User Profile</h2>
-        <p>Account preferences and weekly nutritional goals</p>
+        <p>Your personal details and nutritional goals</p>
       </header>
 
       <div className="profile-details-card">
         <div className="profile-avatar-large">{initials}</div>
+
         <div className="profile-rows">
-          <div className="profile-row">
-            <span>Full Name:</span>
-            <strong>{user?.FullName || 'Not available'}</strong>
-          </div>
-          <div className="profile-row">
-            <span>Email:</span>
-            <strong>{user?.Email || 'Not available'}</strong>
-          </div>
+          {profileDetails.map(([label, value]) => (
+            <div className="profile-row" key={label}>
+              <span>{label}:</span>
+              <strong>{value || 'Not available'}</strong>
+            </div>
+          ))}
+
           <div className="profile-row">
             <span>Plan Tier:</span>
             <strong>Free Student Tier</strong>
           </div>
+
           <div className="profile-row">
             <span>Default Weekly Budget:</span>
             <strong>R500.00</strong>
@@ -532,8 +969,12 @@ function ProfileView({ setActivePage, user }) {
         </div>
       </div>
 
-      <button className="back-dash-btn" onClick={() => setActivePage('dashboard')}>
-        ← Back to Dashboard
+      <button
+        type="button"
+        className="back-dash-btn"
+        onClick={() => setActivePage('dashboard')}
+      >
+        â† Back to Dashboard
       </button>
     </div>
   );
@@ -550,10 +991,21 @@ export default function App() {
       return null;
     }
 
+    let inductionData = {};
+
+    try {
+      inductionData = JSON.parse(
+        localStorage.getItem('inductionData') || '{}'
+      );
+    } catch {
+      inductionData = {};
+    }
+
     return {
       UserID: userId,
       FullName: localStorage.getItem('userName') || 'NutriSmart User',
-      Email: localStorage.getItem('userEmail') || ''
+      Email: localStorage.getItem('userEmail') || '',
+      ...inductionData
     };
   };
 
@@ -572,9 +1024,18 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    const confirmLogout = window.confirm(
+      'Are you sure you want to log out?'
+    );
+
+    if (!confirmLogout) return;
+
     localStorage.removeItem('userId');
     localStorage.removeItem('userName');
     localStorage.removeItem('userEmail');
+    localStorage.removeItem('inductionData');
+    localStorage.removeItem('user');
+
     setUser(null);
     setPlanData(INITIAL_PLAN);
     setActivePage('landing');
@@ -599,50 +1060,66 @@ export default function App() {
     setActivePage(page);
   };
 
-  const handleGeneratePlan = (newPlan) => {
-  const schedule = Array.isArray(newPlan.schedule)
-    ? newPlan.schedule
-    : [];
+  const handleGeneratePlan = useCallback((newPlan = {}) => {
+    const schedule = Array.isArray(newPlan.schedule)
+      ? newPlan.schedule
+      : [];
 
-  const totalCostValue = newPlan.totalCost ?? newPlan.spent;
+    const totalCostValue =
+      newPlan.totalCost ??
+      newPlan.total_cost_zar ??
+      newPlan.spent;
 
-  const totalCost =
-    totalCostValue === undefined ||
-    totalCostValue === null ||
-    totalCostValue === ''
-      ? null
-      : Number(totalCostValue);
+    const totalCost =
+      totalCostValue === undefined ||
+      totalCostValue === null ||
+      totalCostValue === ''
+        ? null
+        : Number(totalCostValue);
 
-  const mealsPlanned = schedule.reduce((total, day) => {
-    return total + ['breakfast', 'lunch', 'dinner'].filter(
-      (meal) => day[meal]
-    ).length;
-  }, 0);
+    const mealsPlanned = schedule.reduce((total, day) => {
+      return total + ['breakfast', 'lunch', 'dinner'].filter(
+        (meal) => day[meal]
+      ).length;
+    }, 0);
 
-  setPlanData((prev) => ({
-    ...prev,
-    budget: Number(newPlan.budget) || prev.budget,
-    spent: Number.isFinite(totalCost) ? totalCost : null,
-    totalCost: Number.isFinite(totalCost) ? totalCost : null,
-    mealsPlanned,
-    calories: null,
-    protein: null,
-    carbs: null,
-    fat: null,
-    schedule,
-    groceries: Array.isArray(newPlan.groceries)
-      ? newPlan.groceries
-      : [],
-    planId: newPlan.planId || null
-  }));
-};
+    setPlanData((prev) => ({
+      ...prev,
+      budget:
+        Number(
+          newPlan.budget ??
+          newPlan.weekly_budget_zar
+        ) || prev.budget,
+      spent: Number.isFinite(totalCost) ? totalCost : null,
+      totalCost: Number.isFinite(totalCost) ? totalCost : null,
+      mealsPlanned,
+      calories: newPlan.calories ?? null,
+      protein: newPlan.protein ?? null,
+      carbs: newPlan.carbs ?? null,
+      fat: newPlan.fat ?? null,
+      schedule,
+      groceries: Array.isArray(newPlan.groceries)
+        ? newPlan.groceries
+        : [],
+      planId:
+        newPlan.planId ||
+        newPlan.plan_id ||
+        newPlan.id ||
+        null
+    }));
+
+    setActivePage('dashboard');
+  }, []);
 
   const handleSwapRecipe = () => {
     setFeaturedRecipe((prev) => {
       const currentIndex = FEATURED_RECIPES.findIndex(
         (recipe) => recipe.name === prev.name
       );
-      const nextIndex = (currentIndex + 1) % FEATURED_RECIPES.length;
+
+      const nextIndex =
+        (currentIndex + 1) % FEATURED_RECIPES.length;
+
       return FEATURED_RECIPES[nextIndex];
     });
   };
@@ -678,8 +1155,8 @@ export default function App() {
           color: #94a3b8;
           display: flex;
           flex-direction: column;
-          padding: 1.5rem 1rem 1.25rem 1rem;
-          border-right: 1px solid rgba(255, 255, 255, 0.08);
+          padding: 1.5rem 1rem 1.25rem;
+          border-right: 1px solid rgba(255,255,255,0.08);
           box-sizing: border-box;
           z-index: 999;
           overflow-y: auto;
@@ -724,7 +1201,7 @@ export default function App() {
         }
 
         .sidebar-link:hover {
-          background: rgba(255, 255, 255, 0.06);
+          background: rgba(255,255,255,0.06);
           color: #ffffff;
         }
 
@@ -749,7 +1226,7 @@ export default function App() {
           align-items: center;
           gap: 0.75rem;
           padding-top: 1rem;
-          border-top: 1px solid rgba(255, 255, 255, 0.08);
+          border-top: 1px solid rgba(255,255,255,0.08);
         }
 
         .sidebar-avatar {
@@ -827,6 +1304,12 @@ export default function App() {
           font-size: 0.95rem;
         }
 
+        .shopping-progress {
+          color: #059669;
+          font-weight: 600;
+          margin-bottom: 1rem;
+        }
+
         .print-btn {
           display: inline-flex;
           align-items: center;
@@ -888,6 +1371,7 @@ export default function App() {
           width: 8px;
           height: 8px;
           border-radius: 50%;
+          background-color: #059669;
         }
 
         .cat-count {
@@ -934,12 +1418,14 @@ export default function App() {
           accent-color: #059669;
           margin-right: 1rem;
           cursor: pointer;
+          flex-shrink: 0;
         }
 
         .item-text {
           flex: 1;
           display: flex;
           flex-direction: column;
+          min-width: 0;
         }
 
         .item-name {
@@ -957,6 +1443,7 @@ export default function App() {
           font-weight: 600;
           color: #1e293b;
           font-size: 0.92rem;
+          margin-left: 0.75rem;
         }
 
         .cost-summary-card {
@@ -985,12 +1472,14 @@ export default function App() {
         .summary-row {
           display: flex;
           justify-content: space-between;
+          gap: 1rem;
           font-size: 0.88rem;
           color: #cbd5e1;
         }
 
         .summary-row strong {
           color: #ffffff;
+          white-space: nowrap;
         }
 
         .summary-divider {
@@ -1026,8 +1515,8 @@ export default function App() {
         }
 
         .summary-savings-pill {
-          background-color: rgba(5, 150, 105, 0.2);
-          border: 1px solid rgba(52, 211, 153, 0.3);
+          background-color: rgba(5,150,105,0.2);
+          border: 1px solid rgba(52,211,153,0.3);
           border-radius: 8px;
           padding: 0.75rem 1rem;
           display: flex;
@@ -1145,6 +1634,7 @@ export default function App() {
         .profile-row {
           display: flex;
           justify-content: space-between;
+          gap: 1rem;
           border-bottom: 1px solid #f8fafc;
           padding-bottom: 0.4rem;
           font-size: 0.92rem;
@@ -1156,6 +1646,7 @@ export default function App() {
 
         .profile-row strong {
           color: #0c232c;
+          text-align: right;
         }
 
         .back-dash-btn {
@@ -1213,7 +1704,6 @@ export default function App() {
           }
 
           .profile-row {
-            gap: 1rem;
             flex-wrap: wrap;
           }
         }
@@ -1232,7 +1722,8 @@ export default function App() {
         className={`app-body ${
           activePage === 'landing' ||
           activePage === 'login' ||
-          activePage === 'register'
+          activePage === 'register' ||
+          activePage === 'induction'
             ? 'no-sidebar'
             : ''
         }`}
@@ -1240,7 +1731,8 @@ export default function App() {
         {user &&
           activePage !== 'landing' &&
           activePage !== 'login' &&
-          activePage !== 'register' && (
+          activePage !== 'register' &&
+          activePage !== 'induction' && (
             <Sidebar
               activePage={activePage}
               setActivePage={handlePageChange}
@@ -1253,6 +1745,18 @@ export default function App() {
             <Landing setActivePage={handlePageChange} />
           )}
 
+          {activePage === 'induction' && (
+            <Induction
+              onContinue={(inductionData) => {
+                localStorage.setItem(
+                  'inductionData',
+                  JSON.stringify(inductionData)
+                );
+                setActivePage('register');
+              }}
+            />
+          )}
+
           {(activePage === 'login' || activePage === 'register') && (
             <Auth
               mode={activePage}
@@ -1262,15 +1766,16 @@ export default function App() {
           )}
 
           {activePage === 'dashboard' && user && (
-            <Dashboard
-              setActivePage={handlePageChange}
-              planData={planData}
-              featuredRecipe={featuredRecipe}
-              onSwapRecipe={handleSwapRecipe}
-              user={user}
-              onGeneratePlan={() => handlePageChange("generate")}
-            />
-          )}
+  <Dashboard
+    setActivePage={handlePageChange}
+    planData={planData}
+    featuredRecipe={featuredRecipe}
+    onSwapRecipe={handleSwapRecipe}
+    user={user}
+    onGeneratePlan={() => handlePageChange('generate')}
+    onPlanLoaded={handleGeneratePlan}
+  />
+)}
 
           {activePage === 'generate' && user && (
             <Generate
@@ -1281,7 +1786,10 @@ export default function App() {
           )}
 
           {activePage === 'shopping' && user && (
-            <FullShoppingListView />
+            <FullShoppingListView
+              groceries={planData.groceries}
+              budget={planData.budget}
+            />
           )}
 
           {activePage === 'palette' && user && (
@@ -1307,6 +1815,4 @@ export default function App() {
     </div>
   );
 }
-
-
 

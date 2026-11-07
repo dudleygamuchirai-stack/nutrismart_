@@ -1,3 +1,4 @@
+
 // Landing page: renders the hero section, core feature highlights, and app navigation entry point
 import React from 'react';
 import './Landing.css';
@@ -21,10 +22,17 @@ export default function Landing({ setActivePage }) {
         </p>
 
         <div className="hero-btns">
-          <button className="btn-primary" onClick={() => setActivePage('generate')}>
+          <button
+            className="btn-primary"
+            onClick={() => setActivePage('induction')}
+          >
             ✨ Build My Meal Plan
           </button>
-          <button className="btn-outline" onClick={() => setActivePage('dashboard')}>
+
+          <button
+            className="btn-outline"
+            onClick={() => setActivePage('dashboard')}
+          >
             📊 View Sample Dashboard
           </button>
         </div>
@@ -35,10 +43,12 @@ export default function Landing({ setActivePage }) {
             <div className="hero-stat-num">R418<span>.50</span></div>
             <div className="hero-stat-lbl">Average Weekly Spend</div>
           </div>
+
           <div className="hero-stat">
             <div className="hero-stat-num">21<span> meals</span></div>
             <div className="hero-stat-lbl">Planned in Under 60s</div>
           </div>
+
           <div className="hero-stat">
             <div className="hero-stat-num">100<span>%</span></div>
             <div className="hero-stat-lbl">SA Retail Matched</div>
@@ -49,7 +59,9 @@ export default function Landing({ setActivePage }) {
       {/* Feature Highlights */}
       <section className="features">
         <span className="section-eyebrow">Why NutriSmart SA</span>
-        <h2 className="section-title">Designed for real South African kitchens and student budgets.</h2>
+        <h2 className="section-title">
+          Designed for real South African kitchens and student budgets.
+        </h2>
 
         <div className="features-grid">
           <div className="feature-card">
