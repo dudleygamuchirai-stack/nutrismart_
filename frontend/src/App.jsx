@@ -1,4 +1,4 @@
-﻿
+
 import React, { useCallback, useEffect, useState } from 'react';
 import Navbar from './components/Navbar';
 import Landing from './pages/Landing';
@@ -912,6 +912,17 @@ function SavedPlansView({ setActivePage }) {
   );
 }
 
+function getActivityLevelLabel(value) {
+  const labels = {
+    "1.2": "Sedentary",
+    "1.375": "Lightly Active",
+    "1.55": "Moderately Active",
+    "1.725": "Very Active",
+    "1.9": "Extra Active"
+  };
+
+  return labels[String(value)] || value || "Not provided";
+}
 function ProfileView({ setActivePage, user }) {
   const initials = (user?.FullName || 'User')
     .split(' ')
@@ -928,7 +939,7 @@ function ProfileView({ setActivePage, user }) {
     ['Sex', user?.Sex],
     ['Height', user?.HeightCm ? `${user.HeightCm} cm` : null],
     ['Weight', user?.WeightKg ? `${user.WeightKg} kg` : null],
-    ['Activity Level', user?.ActivityLevel],
+    ['Activity Level', getActivityLevelLabel(user?.ActivityLevel)],
     ['Fitness Goal', user?.Goal],
     ['Household Size', user?.HouseholdSize],
     [
@@ -974,7 +985,7 @@ function ProfileView({ setActivePage, user }) {
         className="back-dash-btn"
         onClick={() => setActivePage('dashboard')}
       >
-        â† Back to Dashboard
+        ← Back to Dashboard
       </button>
     </div>
   );
