@@ -208,11 +208,19 @@ def validate_profile(data):
     if sex not in ("male", "female"):
         errors["Sex"] = "Choose male or female"
     clean["Sex"] = sex
-    activity = str(data.get("ActivityLevel", "light")).strip().lower() or "light"
+    activity = str(data.get("ActivityLevel") or "light").strip().lower()
+    for word, key in (("sedent", "sedentary"), ("light", "light"), ("moder", "moderate"), ("very", "active"), ("active", "active")):
+        if word in activity:        # accepts "Moderately active", "Lightly active", "Sedentary (little exercise)" ...
+            activity = key
+            break
     if activity not in ACTIVITY_FACTORS:
         errors["ActivityLevel"] = "Choose sedentary, light, moderate or active"
     clean["ActivityLevel"] = activity
-    goal = str(data.get("Goal", "maintain")).strip().lower() or "maintain"
+    goal = str(data.get("Goal") or "maintain").strip().lower()
+    for word, key in (("lose", "lose"), ("loss", "lose"), ("gain", "gain"), ("build", "gain"), ("maint", "maintain")):
+        if word in goal:
+            goal = key
+            break
     if goal not in GOAL_ADJUST:
         errors["Goal"] = "Choose lose, maintain or gain"
     clean["Goal"] = goal
@@ -316,7 +324,9 @@ def user_payload(user):
     }
 
 
-def field_errors(errors, status=400, message="Please fix the highlighted fields"):
+def field_errors(errors, status=400, message=None):
+    # Put the real reasons in "message" so even a simple frontend shows what is wrong
+    message = message or "; ".join(str(v) for v in errors.values())
     return jsonify({"status": "error", "message": message, "errors": errors}), status
 
 
@@ -348,7 +358,7 @@ def register():
         errors['Password'] = "Password must be at least 8 characters"
 
     try:
-        household = int(data.get('HouseholdSize', 1))
+        household = int(data.get('HouseholdSize') or 1)   # blank or missing means 1
         if not 1 <= household <= 20:
             raise ValueError
     except (TypeError, ValueError):
