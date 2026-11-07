@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import './Induction.css';
 
@@ -8,7 +7,7 @@ export default function Induction({ onContinue }) {
     sex: '',
     height: '',
     weight: '',
-    activity: '1.2',
+    activity: 'sedentary',
     goal: 'maintain',
     householdSize: '1'
   });
@@ -39,10 +38,14 @@ export default function Induction({ onContinue }) {
       bmr = 10 * weight + 6.25 * height - 5 * age - 161;
     }
 
-    let calories = bmr * Number(form.activity);
+    const factors = { sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725 };
+    let calories = bmr * (factors[form.activity] || 1.2);
 
-    if (form.goal === 'lose') calories -= 300;
+    if (form.goal === 'lose') calories -= 400;
     if (form.goal === 'gain') calories += 300;
+
+    // Safety floor, same as the backend
+    calories = Math.max(calories, form.sex === 'male' ? 1500 : 1200);
 
     return Math.round(calories);
   };
@@ -144,11 +147,10 @@ export default function Induction({ onContinue }) {
             value={form.activity}
             onChange={updateField}
           >
-            <option value="1.2">Not very active</option>
-            <option value="1.375">Lightly active</option>
-            <option value="1.55">Moderately active</option>
-            <option value="1.725">Very active</option>
-            <option value="1.9">Extremely active</option>
+            <option value="sedentary">Sedentary - little or no exercise</option>
+            <option value="light">Light - exercise 1 to 3 days a week</option>
+            <option value="moderate">Moderate - exercise 3 to 5 days a week</option>
+            <option value="active">Active - hard exercise 6 to 7 days a week</option>
           </select>
 
           <label>What is your goal?</label>
